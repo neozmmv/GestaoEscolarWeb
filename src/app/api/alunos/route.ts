@@ -37,48 +37,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const searchBy = searchParams.get('searchBy') || 'nome';
-    const searchText = searchParams.get('searchText') || '';
-    const escolaId = searchParams.get('escolaId');
-
     const connection = await getConnection();
 
-    let query = `
-      SELECT a.id, a.nome, a.numero, a.turma, a.ano_letivo, e.nome as escola_nome 
+    // Se for admin, busca todos os alunos de todas as escolas
+    // Se não for admin, busca apenas os alunos da escola do monitor
+    const [rows]: any = await connection.execute(
+      `SELECT a.*, e.nome as escola_nome 
       FROM alunos a
       JOIN escolas e ON a.escola_id = e.id
-      WHERE 1=1
-    `;
-    const params: any[] = [];
+       ${user.perfil !== 'admin' ? 'WHERE a.escola_id = ?' : ''} 
+       ORDER BY e.nome, a.nome`,
+      user.perfil !== 'admin' ? [user.escola_id] : []
+    );
 
-    if (user.perfil !== 'admin') {
-      query += ' AND a.escola_id = ?';
-      params.push(user.escola_id);
-    } else if (escolaId) {
-      query += ' AND a.escola_id = ?';
-      params.push(escolaId);
-    }
-
-    if (searchText) {
-      const columnMap: { [key: string]: string } = {
-        'ID': 'a.id',
-        'Nome': 'a.nome',
-        'Número': 'a.numero',
-        'Turma': 'a.turma',
-        'Ano Letivo': 'a.ano_letivo'
-      };
-      const dbColumn = columnMap[searchBy] || 'a.nome';
-      query += ` AND ${dbColumn} LIKE ?`;
-      params.push(`%${searchText}%`);
-    }
-
-    query += ' ORDER BY e.nome, a.nome';
-
-    const [rows] = await connection.execute(query, params);
     await connection.end();
 
-    return NextResponse.json({ students: rows });
+    return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching students:', error);
     return NextResponse.json(
@@ -106,17 +80,46 @@ export async function POST(request: Request) {
 
     const connection = await getConnection();
 
+    // Determinar o escola_id a ser usado
+    const escolaIdToUse = user.perfil === 'admin' ? escola_id : user.escola_id;
+
+    if (!escolaIdToUse) {
+      await connection.end();
+      return NextResponse.json(
+        { error: 'Escola não especificada' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se já existe um aluno com o mesmo número na escola
+    const [existingStudents]: any = await connection.execute(
+      'SELECT id FROM alunos WHERE numero = ? AND escola_id = ?',
+      [numero, escolaIdToUse]
+    );
+
+    if (existingStudents.length > 0) {
+      await connection.end();
+      return NextResponse.json(
+        { error: 'Já existe um aluno com este número nesta escola' },
+        { status: 400 }
+      );
+    }
+
+    // Inserir novo aluno
     const [result]: any = await connection.execute(
-      `INSERT INTO alunos (nome, numero, turma, ano_letivo, escola_id) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [nome, numero, turma, ano_letivo, user.perfil === 'admin' ? escola_id : user.escola_id]
+      'INSERT INTO alunos (nome, numero, turma, ano_letivo, escola_id) VALUES (?, ?, ?, ?, ?)',
+      [nome, numero, turma, ano_letivo, escolaIdToUse]
     );
 
     await connection.end();
 
     return NextResponse.json({
       id: result.insertId,
-      message: 'Aluno cadastrado com sucesso'
+      nome,
+      numero,
+      turma,
+      ano_letivo,
+      escola_id: escolaIdToUse,
     });
   } catch (error) {
     console.error('Error creating student:', error);
@@ -134,7 +137,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { id, nome, numero, turma, ano_letivo, escola_id } = await request.json();
+    const { id, nome, numero, turma, ano_letivo } = await request.json();
 
     if (!id || !nome || !numero || !turma || !ano_letivo) {
       return NextResponse.json(
@@ -145,24 +148,49 @@ export async function PUT(request: Request) {
 
     const connection = await getConnection();
 
+    // Verificar se o aluno pertence à escola do monitor
+    const [alunos]: any = await connection.execute(
+      'SELECT id FROM alunos WHERE id = ? AND escola_id = ?',
+      [id, user.escola_id]
+    );
+
+    if (alunos.length === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { error: 'Aluno não encontrado ou não pertence à sua escola' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar se já existe outro aluno com o mesmo número na escola
+    const [existingStudents]: any = await connection.execute(
+      'SELECT id FROM alunos WHERE numero = ? AND escola_id = ? AND id != ?',
+      [numero, user.escola_id, id]
+    );
+
+    if (existingStudents.length > 0) {
+      await connection.end();
+      return NextResponse.json(
+        { error: 'Já existe outro aluno com este número nesta escola' },
+        { status: 400 }
+      );
+    }
+
+    // Atualizar aluno
     await connection.execute(
-      `UPDATE alunos 
-       SET nome = ?, numero = ?, turma = ?, ano_letivo = ?, escola_id = ?
-       WHERE id = ?`,
-      [
-        nome,
-        numero,
-        turma,
-        ano_letivo,
-        user.perfil === 'admin' ? escola_id : user.escola_id,
-        id
-      ]
+      'UPDATE alunos SET nome = ?, numero = ?, turma = ?, ano_letivo = ? WHERE id = ?',
+      [nome, numero, turma, ano_letivo, id]
     );
 
     await connection.end();
 
     return NextResponse.json({
-      message: 'Aluno atualizado com sucesso'
+      id,
+      nome,
+      numero,
+      turma,
+      ano_letivo,
+      escola_id: user.escola_id,
     });
   } catch (error) {
     console.error('Error updating student:', error);
@@ -192,16 +220,26 @@ export async function DELETE(request: Request) {
 
     const connection = await getConnection();
 
-    await connection.execute(
-      'DELETE FROM alunos WHERE id = ?',
-      [id]
+    // Verificar se o aluno pertence à escola do monitor
+    const [alunos]: any = await connection.execute(
+      'SELECT id FROM alunos WHERE id = ? AND escola_id = ?',
+      [id, user.escola_id]
     );
+
+    if (alunos.length === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { error: 'Aluno não encontrado ou não pertence à sua escola' },
+        { status: 404 }
+      );
+    }
+
+    // Excluir aluno
+    await connection.execute('DELETE FROM alunos WHERE id = ?', [id]);
 
     await connection.end();
 
-    return NextResponse.json({
-      message: 'Aluno excluído com sucesso'
-    });
+    return NextResponse.json({ message: 'Aluno excluído com sucesso' });
   } catch (error) {
     console.error('Error deleting student:', error);
     return NextResponse.json(

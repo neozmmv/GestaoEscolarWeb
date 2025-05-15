@@ -8,107 +8,115 @@ interface Student {
   nome: string;
   numero: string;
   turma: string;
-  ano_letivo: string;
-  escola_nome: string;
+  ano_letivo: number;
+  escola_nome?: string;
 }
 
-interface School {
+interface User {
   id: number;
   nome: string;
+  perfil: string;
+  escola_id: number;
+}
+
+interface Filters {
+  search: string;
+  turma: string;
+  ano_letivo: string;
+  escola: string;
+}
+
+interface SortConfig {
+  key: keyof Student | null;
+  direction: 'asc' | 'desc';
 }
 
 export default function StudentsPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
-  const [schools, setSchools] = useState<School[]>([]);
-  const [searchBy, setSearchBy] = useState('Nome');
-  const [searchText, setSearchText] = useState('');
-  const [selectedSchool, setSelectedSchool] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [formData, setFormData] = useState({
-    nome: '',
-    numero: '',
+  const [user, setUser] = useState<User | null>(null);
+  const [filters, setFilters] = useState<Filters>({
+    search: '',
     turma: '',
     ano_letivo: '',
-    escola_id: '',
+    escola: '',
+  });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: null,
+    direction: 'asc',
   });
 
   useEffect(() => {
+    fetchUser();
     fetchStudents();
-    fetchSchools();
   }, []);
+
+  useEffect(() => {
+    filterStudents();
+  }, [filters, students]);
+
+  const filterStudents = () => {
+    let filtered = [...students];
+
+    // Aplicar filtro de busca geral
+    if (filters.search.trim()) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter((student) => {
+        return (
+          student.nome.toLowerCase().includes(searchLower) ||
+          student.numero.toLowerCase().includes(searchLower) ||
+          student.turma.toLowerCase().includes(searchLower) ||
+          student.ano_letivo.toString().includes(searchLower) ||
+          (student.escola_nome && student.escola_nome.toLowerCase().includes(searchLower))
+        );
+      });
+    }
+
+    // Aplicar filtro de turma
+    if (filters.turma) {
+      filtered = filtered.filter((student) => student.turma === filters.turma);
+    }
+
+    // Aplicar filtro de ano letivo
+    if (filters.ano_letivo) {
+      filtered = filtered.filter((student) => student.ano_letivo.toString() === filters.ano_letivo);
+    }
+
+    // Aplicar filtro de escola (apenas para admin)
+    if (filters.escola && user?.perfil === 'admin') {
+      filtered = filtered.filter((student) => student.escola_nome === filters.escola);
+    }
+
+    setFilteredStudents(filtered);
+  };
+
+  const fetchUser = async () => {
+    try {
+      const response = await fetch('/api/user');
+      if (!response.ok) throw new Error('Erro ao carregar informações do usuário');
+      const data = await response.json();
+      setUser(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchStudents = async () => {
     try {
-      setIsLoading(true);
-      const params = new URLSearchParams({
-        searchBy,
-        searchText,
-        ...(selectedSchool && { escolaId: selectedSchool }),
-      });
-
-      const response = await fetch(`/api/alunos?${params}`);
+      setLoading(true);
+      const response = await fetch('/api/alunos');
       if (!response.ok) throw new Error('Erro ao carregar alunos');
-
       const data = await response.json();
-      setStudents(data.students);
+      setStudents(Array.isArray(data) ? data : []);
+      setFilteredStudents(Array.isArray(data) ? data : []);
     } catch (err) {
       setError('Erro ao carregar alunos');
       console.error(err);
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchSchools = async () => {
-    try {
-      const response = await fetch('/api/escolas');
-      if (!response.ok) throw new Error('Erro ao carregar escolas');
-      const data = await response.json();
-      setSchools(data.schools);
-    } catch (error) {
-      console.error('Erro:', error);
-    }
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchStudents();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const url = editingStudent ? '/api/alunos' : '/api/alunos';
-      const method = editingStudent ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          id: editingStudent?.id,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Erro ao salvar aluno');
-
-      setIsModalOpen(false);
-      setEditingStudent(null);
-      setFormData({
-        nome: '',
-        numero: '',
-        turma: '',
-        ano_letivo: '',
-        escola_id: '',
-      });
-      fetchStudents();
-    } catch (err) {
-      setError('Erro ao salvar aluno');
-      console.error(err);
+      setLoading(false);
     }
   };
 
@@ -122,258 +130,307 @@ export default function StudentsPage() {
 
       if (!response.ok) throw new Error('Erro ao excluir aluno');
 
-      fetchStudents();
+      await fetchStudents();
     } catch (err) {
       setError('Erro ao excluir aluno');
       console.error(err);
     }
   };
 
-  const handleEdit = (student: Student) => {
-    setEditingStudent(student);
-    setFormData({
-      nome: student.nome,
-      numero: student.numero,
-      turma: student.turma,
-      ano_letivo: student.ano_letivo,
-      escola_id: student.escola_nome,
-    });
-    setIsModalOpen(true);
+  const handleFilterChange = (key: keyof Filters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      turma: '',
+      ano_letivo: '',
+      escola: '',
+    });
+  };
+
+  const handleSort = (key: keyof Student) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedStudents = [...filteredStudents].sort((a, b) => {
+      if (a[key] === null) return 1;
+      if (b[key] === null) return -1;
+      if (a[key] === undefined) return 1;
+      if (b[key] === undefined) return -1;
+
+      if (typeof a[key] === 'string' && typeof b[key] === 'string') {
+        return direction === 'asc'
+          ? a[key].toString().localeCompare(b[key].toString())
+          : b[key].toString().localeCompare(a[key].toString());
+      }
+
+      return direction === 'asc'
+        ? (a[key] as number) - (b[key] as number)
+        : (b[key] as number) - (a[key] as number);
+    });
+
+    setFilteredStudents(sortedStudents);
+  };
+
+  const getSortIcon = (key: keyof Student) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
+  // Obter valores únicos para os filtros
+  const turmas = Array.from(
+    new Set(
+      students
+        .filter((student) => !filters.escola || student.escola_nome === filters.escola)
+        .map((student) => student.turma)
+    )
+  ).sort();
+  const anosLetivos = Array.from(new Set(students.map((student) => student.ano_letivo))).sort();
+  const escolas = Array.from(new Set(students.map((student) => student.escola_nome)))
+    .filter(Boolean)
+    .sort();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-xl font-semibold mb-4">Carregando...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-xl font-semibold text-red-500 mb-4">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Gerenciamento de Alunos</h1>
-
-      {/* Search Form */}
-      <form onSubmit={handleSearch} className="mb-6 flex gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium mb-1">Buscar por</label>
-          <select
-            value={searchBy}
-            onChange={(e) => setSearchBy(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            <option value="ID">ID</option>
-            <option value="Nome">Nome</option>
-            <option value="Número">Número</option>
-            <option value="Turma">Turma</option>
-            <option value="Ano Letivo">Ano Letivo</option>
-          </select>
-        </div>
-
-        <div className="flex-1">
-          <label className="block text-sm font-medium mb-1">Termo de busca</label>
-          <input
-            type="text"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Digite para buscar..."
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Escola</label>
-          <select
-            value={selectedSchool}
-            onChange={(e) => setSelectedSchool(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            <option value="">Todas as Escolas</option>
-            {schools.map((school) => (
-              <option key={school.id} value={school.id}>
-                {school.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Alunos</h1>
         <button
-          type="submit"
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          onClick={() => router.push('/alunos/novo')}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
         >
-          Buscar
+          Novo Aluno
         </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setSearchText('');
-            setSelectedSchool('');
-            fetchStudents();
-          }}
-          className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-        >
-          Limpar
-        </button>
-      </form>
-
-      {/* Students Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-4 border-b">
-          <button
-            onClick={() => {
-              setEditingStudent(null);
-              setFormData({
-                nome: '',
-                numero: '',
-                turma: '',
-                ano_letivo: '',
-                escola_id: '',
-              });
-              setIsModalOpen(true);
-            }}
-            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-          >
-            Cadastrar Novo Aluno
-          </button>
-        </div>
-
-        {isLoading ? (
-          <div className="p-4 text-center">Carregando...</div>
-        ) : error ? (
-          <div className="p-4 text-center text-red-500">{error}</div>
-        ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nome
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Número
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Turma
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ano Letivo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Escola
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {students.map((student) => (
-                <tr key={student.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.nome}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.numero}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.turma}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.ano_letivo}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.escola_nome}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => handleEdit(student)}
-                      className="text-blue-500 hover:text-blue-700 mr-3"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(student.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
-              {editingStudent ? 'Editar Aluno' : 'Cadastrar Novo Aluno'}
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Nome</label>
-                <input
-                  type="text"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Número</label>
-                <input
-                  type="text"
-                  value={formData.numero}
-                  onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Turma</label>
-                <input
-                  type="text"
-                  value={formData.turma}
-                  onChange={(e) => setFormData({ ...formData, turma: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Ano Letivo</label>
-                <input
-                  type="text"
-                  value={formData.ano_letivo}
-                  onChange={(e) => setFormData({ ...formData, ano_letivo: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Escola</label>
-                <select
-                  value={formData.escola_id}
-                  onChange={(e) => setFormData({ ...formData, escola_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                >
-                  <option value="">Selecione uma escola</option>
-                  {schools.map((school) => (
-                    <option key={school.id} value={school.id}>
-                      {school.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end gap-4">
+      {/* Filtros */}
+      <div className="bg-white shadow-md rounded-lg p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Busca Geral */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Busca Geral</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                placeholder="Buscar por nome ou número..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {filters.search && (
                 <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                  onClick={() => handleFilterChange('search', '')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  Cancelar
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                >
-                  {editingStudent ? 'Salvar' : 'Cadastrar'}
-                </button>
-              </div>
-            </form>
+              )}
+            </div>
+          </div>
+
+          {/* Filtro de Escola (apenas para admin) */}
+          {user?.perfil === 'admin' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Escola</label>
+              <select
+                value={filters.escola}
+                onChange={(e) => {
+                  handleFilterChange('escola', e.target.value);
+                  // Limpar o filtro de turma quando mudar a escola
+                  handleFilterChange('turma', '');
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Todas as escolas</option>
+                {escolas.map((escola) => (
+                  <option key={escola} value={escola}>
+                    {escola}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Filtro de Turma */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Turma</label>
+            <select
+              value={filters.turma}
+              onChange={(e) => handleFilterChange('turma', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={user?.perfil === 'admin' && !filters.escola}
+            >
+              <option value="">Todas as turmas</option>
+              {turmas.map((turma) => (
+                <option key={turma} value={turma}>
+                  {turma}
+                </option>
+              ))}
+            </select>
+            {user?.perfil === 'admin' && !filters.escola && (
+              <p className="mt-1 text-xs text-gray-500">Selecione uma escola primeiro</p>
+            )}
+          </div>
+
+          {/* Filtro de Ano Letivo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ano Letivo</label>
+            <select
+              value={filters.ano_letivo}
+              onChange={(e) => handleFilterChange('ano_letivo', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Todos os anos</option>
+              {anosLetivos.map((ano) => (
+                <option key={ano} value={ano}>
+                  {ano}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      )}
+
+        {/* Botão Limpar Filtros */}
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={clearFilters}
+            className="text-gray-600 hover:text-gray-800 flex items-center"
+          >
+            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Limpar Filtros
+          </button>
+          <p className="text-sm text-gray-500">
+            {filteredStudents.length} aluno{filteredStudents.length !== 1 ? 's' : ''} encontrado
+            {filteredStudents.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <table className="min-w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('id')}
+              >
+                ID {getSortIcon('id')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('nome')}
+              >
+                Nome {getSortIcon('nome')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('numero')}
+              >
+                Número {getSortIcon('numero')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('turma')}
+              >
+                Turma {getSortIcon('turma')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('ano_letivo')}
+              >
+                Ano Letivo {getSortIcon('ano_letivo')}
+              </th>
+              {user?.perfil === 'admin' && (
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('escola_nome')}
+                >
+                  Escola {getSortIcon('escola_nome')}
+                </th>
+              )}
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ações
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredStudents.map((student) => (
+              <tr key={student.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {student.nome}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {student.numero}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {student.turma}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {student.ano_letivo}
+                </td>
+                {user?.perfil === 'admin' && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {student.escola_nome}
+                  </td>
+                )}
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => router.push(`/alunos/${student.id}`)}
+                    className="text-blue-600 hover:text-blue-900 mr-4"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(student.id)}
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    Excluir
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

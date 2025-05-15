@@ -2,8 +2,30 @@ import { NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
+import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// Função para gerar hash no mesmo formato do Werkzeug
+function generatePasswordHash(password: string, salt: string = ''): string {
+  const iterations = 600000;
+  const keylen = 32;
+  const digest = 'sha256';
+  
+  // Gerar salt se não fornecido
+  const actualSalt = salt || crypto.randomBytes(16).toString('hex');
+  
+  // Usar a mesma implementação do Werkzeug
+  const hash = crypto.pbkdf2Sync(
+    Buffer.from(password, 'utf8'),
+    Buffer.from(actualSalt, 'utf8'),
+    iterations,
+    keylen,
+    digest
+  );
+  
+  return `pbkdf2:sha256:${iterations}$${actualSalt}$${hash.toString('hex')}`;
+}
 
 async function getConnection() {
   return await mysql.createConnection({
@@ -86,10 +108,13 @@ export async function POST(request: Request) {
 
     const connection = await getConnection();
 
+    // Gerar hash da senha antes de salvar
+    const senhaHash = generatePasswordHash(senha);
+
     const [result]: any = await connection.execute(
       `INSERT INTO monitores (nome, cpf, perfil, escola_id, senha) 
        VALUES (?, ?, ?, ?, ?)`,
-      [nome, cpf, perfil, escola_id, senha]
+      [nome, cpf, perfil, escola_id, senhaHash]
     );
 
     await connection.end();
@@ -126,11 +151,13 @@ export async function PUT(request: Request) {
     const connection = await getConnection();
 
     if (senha) {
+      // Gerar hash da senha antes de atualizar
+      const senhaHash = generatePasswordHash(senha);
       await connection.execute(
         `UPDATE monitores 
          SET nome = ?, cpf = ?, perfil = ?, escola_id = ?, senha = ?
          WHERE id = ?`,
-        [nome, cpf, perfil, escola_id, senha, id]
+        [nome, cpf, perfil, escola_id, senhaHash, id]
       );
     } else {
       await connection.execute(

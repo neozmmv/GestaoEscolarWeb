@@ -9,6 +9,13 @@ interface DashboardStats {
   totalMonitors: number;
 }
 
+interface User {
+  id: number;
+  nome: string;
+  perfil: string;
+  escola_id: number;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
@@ -18,9 +25,11 @@ export default function DashboardPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     fetchStats();
+    fetchUser();
   }, []);
 
   const fetchStats = async () => {
@@ -36,6 +45,18 @@ export default function DashboardPage() {
       console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUser = async () => {
+    try {
+      const response = await fetch('/api/user');
+      if (!response.ok) throw new Error('Erro ao carregar informações do usuário');
+
+      const data = await response.json();
+      setUser(data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -147,44 +168,48 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500">Cadastrar um novo aluno</p>
           </button>
 
-          <button
-            onClick={() => router.push('/escolas')}
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="text-green-500 mb-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-            <h3 className="font-medium">Nova Escola</h3>
-            <p className="text-sm text-gray-500">Cadastrar uma nova escola</p>
-          </button>
+          {user?.perfil === 'admin' && (
+            <>
+              <button
+                onClick={() => router.push('/escolas')}
+                className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="text-green-500 mb-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                </div>
+                <h3 className="font-medium">Nova Escola</h3>
+                <p className="text-sm text-gray-500">Cadastrar uma nova escola</p>
+              </button>
+
+              <button
+                onClick={() => router.push('/monitores')}
+                className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="text-purple-500 mb-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                </div>
+                <h3 className="font-medium">Novo Monitor</h3>
+                <p className="text-sm text-gray-500">Cadastrar um novo monitor</p>
+              </button>
+            </>
+          )}
 
           <button
-            onClick={() => router.push('/monitores')}
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="text-purple-500 mb-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-            <h3 className="font-medium">Novo Monitor</h3>
-            <p className="text-sm text-gray-500">Cadastrar um novo monitor</p>
-          </button>
-
-          <button
-            onClick={() => router.push('/observations')}
+            onClick={() => router.push('/observacoes')}
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
           >
             <div className="text-yellow-500 mb-2">

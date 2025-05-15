@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface School {
   id: number;
@@ -12,11 +12,11 @@ export default function SchoolsPage() {
   const router = useRouter();
   const [schools, setSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [formData, setFormData] = useState({
-    nome: "",
+    nome: '',
   });
 
   useEffect(() => {
@@ -26,13 +26,13 @@ export default function SchoolsPage() {
   const fetchSchools = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/schools");
-      if (!response.ok) throw new Error("Erro ao carregar escolas");
+      const response = await fetch('/api/escolas');
+      if (!response.ok) throw new Error('Erro ao carregar escolas');
 
       const data = await response.json();
       setSchools(data.schools);
     } catch (err) {
-      setError("Erro ao carregar escolas");
+      setError('Erro ao carregar escolas');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -42,43 +42,43 @@ export default function SchoolsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingSchool ? "/api/schools" : "/api/schools";
-      const method = editingSchool ? "PUT" : "POST";
+      const url = editingSchool ? '/api/escolas' : '/api/escolas';
+      const method = editingSchool ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           id: editingSchool?.id,
         }),
       });
 
-      if (!response.ok) throw new Error("Erro ao salvar escola");
+      if (!response.ok) throw new Error('Erro ao salvar escola');
 
       setIsModalOpen(false);
       setEditingSchool(null);
-      setFormData({ nome: "" });
+      setFormData({ nome: '' });
       fetchSchools();
     } catch (err) {
-      setError("Erro ao salvar escola");
+      setError('Erro ao salvar escola');
       console.error(err);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Tem certeza que deseja excluir esta escola?")) return;
+    if (!confirm('Tem certeza que deseja excluir esta escola?')) return;
 
     try {
-      const response = await fetch(`/api/schools?id=${id}`, {
-        method: "DELETE",
+      const response = await fetch(`/api/escolas?id=${id}`, {
+        method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error("Erro ao excluir escola");
+      if (!response.ok) throw new Error('Erro ao excluir escola');
 
       fetchSchools();
     } catch (err) {
-      setError("Erro ao excluir escola");
+      setError('Erro ao excluir escola');
       console.error(err);
     }
   };
@@ -99,7 +99,7 @@ export default function SchoolsPage() {
           <button
             onClick={() => {
               setEditingSchool(null);
-              setFormData({ nome: "" });
+              setFormData({ nome: '' });
               setIsModalOpen(true);
             }}
             className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
@@ -158,7 +158,7 @@ export default function SchoolsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {editingSchool ? "Editar Escola" : "Cadastrar Nova Escola"}
+              {editingSchool ? 'Editar Escola' : 'Cadastrar Nova Escola'}
             </h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -166,9 +166,7 @@ export default function SchoolsPage() {
                 <input
                   type="text"
                   value={formData.nome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nome: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   className="w-full px-3 py-2 border rounded-md"
                   required
                 />
@@ -185,7 +183,7 @@ export default function SchoolsPage() {
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                 >
-                  {editingSchool ? "Salvar" : "Cadastrar"}
+                  {editingSchool ? 'Salvar' : 'Cadastrar'}
                 </button>
               </div>
             </form>

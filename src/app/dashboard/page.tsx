@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface DashboardStats {
   totalStudents: number;
@@ -17,7 +17,7 @@ export default function DashboardPage() {
     totalMonitors: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchStats();
@@ -26,13 +26,13 @@ export default function DashboardPage() {
   const fetchStats = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/dashboard/stats");
-      if (!response.ok) throw new Error("Erro ao carregar estatísticas");
+      const response = await fetch('/api/dashboard/stats');
+      if (!response.ok) throw new Error('Erro ao carregar estatísticas');
 
       const data = await response.json();
       setStats(data);
     } catch (err) {
-      setError("Erro ao carregar estatísticas");
+      setError('Erro ao carregar estatísticas');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -68,12 +68,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100 text-blue-500">
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -84,9 +79,7 @@ export default function DashboardPage() {
             </div>
             <div className="ml-4">
               <h2 className="text-gray-600 text-sm">Total de Alunos</h2>
-              <p className="text-2xl font-semibold text-gray-800">
-                {stats.totalStudents}
-              </p>
+              <p className="text-2xl font-semibold text-gray-800">{stats.totalStudents}</p>
             </div>
           </div>
         </div>
@@ -95,12 +88,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-green-100 text-green-500">
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -111,9 +99,7 @@ export default function DashboardPage() {
             </div>
             <div className="ml-4">
               <h2 className="text-gray-600 text-sm">Total de Escolas</h2>
-              <p className="text-2xl font-semibold text-gray-800">
-                {stats.totalSchools}
-              </p>
+              <p className="text-2xl font-semibold text-gray-800">{stats.totalSchools}</p>
             </div>
           </div>
         </div>
@@ -122,12 +108,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-purple-100 text-purple-500">
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -138,9 +119,7 @@ export default function DashboardPage() {
             </div>
             <div className="ml-4">
               <h2 className="text-gray-600 text-sm">Total de Monitores</h2>
-              <p className="text-2xl font-semibold text-gray-800">
-                {stats.totalMonitors}
-              </p>
+              <p className="text-2xl font-semibold text-gray-800">{stats.totalMonitors}</p>
             </div>
           </div>
         </div>
@@ -151,16 +130,11 @@ export default function DashboardPage() {
         <h2 className="text-xl font-semibold mb-4">Ações Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
-            onClick={() => router.push("/students")}
+            onClick={() => router.push('/alunos')}
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
           >
             <div className="text-blue-500 mb-2">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -174,16 +148,11 @@ export default function DashboardPage() {
           </button>
 
           <button
-            onClick={() => router.push("/schools")}
+            onClick={() => router.push('/escolas')}
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
           >
             <div className="text-green-500 mb-2">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -197,16 +166,11 @@ export default function DashboardPage() {
           </button>
 
           <button
-            onClick={() => router.push("/monitors")}
+            onClick={() => router.push('/monitores')}
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
           >
             <div className="text-purple-500 mb-2">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -220,16 +184,11 @@ export default function DashboardPage() {
           </button>
 
           <button
-            onClick={() => router.push("/observations")}
+            onClick={() => router.push('/observations')}
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
           >
             <div className="text-yellow-500 mb-2">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -239,9 +198,7 @@ export default function DashboardPage() {
               </svg>
             </div>
             <h3 className="font-medium">Nova Observação</h3>
-            <p className="text-sm text-gray-500">
-              Registrar uma nova observação
-            </p>
+            <p className="text-sm text-gray-500">Registrar uma nova observação</p>
           </button>
         </div>
       </div>

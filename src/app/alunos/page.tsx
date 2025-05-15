@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Student {
   id: number;
@@ -21,19 +21,19 @@ export default function StudentsPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
-  const [searchBy, setSearchBy] = useState("Nome");
-  const [searchText, setSearchText] = useState("");
-  const [selectedSchool, setSelectedSchool] = useState("");
+  const [searchBy, setSearchBy] = useState('Nome');
+  const [searchText, setSearchText] = useState('');
+  const [selectedSchool, setSelectedSchool] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState({
-    nome: "",
-    numero: "",
-    turma: "",
-    ano_letivo: "",
-    escola_id: "",
+    nome: '',
+    numero: '',
+    turma: '',
+    ano_letivo: '',
+    escola_id: '',
   });
 
   useEffect(() => {
@@ -50,13 +50,13 @@ export default function StudentsPage() {
         ...(selectedSchool && { escolaId: selectedSchool }),
       });
 
-      const response = await fetch(`/api/students?${params}`);
-      if (!response.ok) throw new Error("Erro ao carregar alunos");
+      const response = await fetch(`/api/alunos?${params}`);
+      if (!response.ok) throw new Error('Erro ao carregar alunos');
 
       const data = await response.json();
       setStudents(data.students);
     } catch (err) {
-      setError("Erro ao carregar alunos");
+      setError('Erro ao carregar alunos');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -65,13 +65,12 @@ export default function StudentsPage() {
 
   const fetchSchools = async () => {
     try {
-      const response = await fetch("/api/schools");
-      if (!response.ok) throw new Error("Erro ao carregar escolas");
-
+      const response = await fetch('/api/escolas');
+      if (!response.ok) throw new Error('Erro ao carregar escolas');
       const data = await response.json();
       setSchools(data.schools);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error('Erro:', error);
     }
   };
 
@@ -83,49 +82,49 @@ export default function StudentsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingStudent ? "/api/students" : "/api/students";
-      const method = editingStudent ? "PUT" : "POST";
+      const url = editingStudent ? '/api/alunos' : '/api/alunos';
+      const method = editingStudent ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           id: editingStudent?.id,
         }),
       });
 
-      if (!response.ok) throw new Error("Erro ao salvar aluno");
+      if (!response.ok) throw new Error('Erro ao salvar aluno');
 
       setIsModalOpen(false);
       setEditingStudent(null);
       setFormData({
-        nome: "",
-        numero: "",
-        turma: "",
-        ano_letivo: "",
-        escola_id: "",
+        nome: '',
+        numero: '',
+        turma: '',
+        ano_letivo: '',
+        escola_id: '',
       });
       fetchStudents();
     } catch (err) {
-      setError("Erro ao salvar aluno");
+      setError('Erro ao salvar aluno');
       console.error(err);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Tem certeza que deseja excluir este aluno?")) return;
+    if (!confirm('Tem certeza que deseja excluir este aluno?')) return;
 
     try {
-      const response = await fetch(`/api/students?id=${id}`, {
-        method: "DELETE",
+      const response = await fetch(`/api/alunos?id=${id}`, {
+        method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error("Erro ao excluir aluno");
+      if (!response.ok) throw new Error('Erro ao excluir aluno');
 
       fetchStudents();
     } catch (err) {
-      setError("Erro ao excluir aluno");
+      setError('Erro ao excluir aluno');
       console.error(err);
     }
   };
@@ -164,9 +163,7 @@ export default function StudentsPage() {
         </div>
 
         <div className="flex-1">
-          <label className="block text-sm font-medium mb-1">
-            Termo de busca
-          </label>
+          <label className="block text-sm font-medium mb-1">Termo de busca</label>
           <input
             type="text"
             value={searchText}
@@ -202,8 +199,8 @@ export default function StudentsPage() {
         <button
           type="button"
           onClick={() => {
-            setSearchText("");
-            setSelectedSchool("");
+            setSearchText('');
+            setSelectedSchool('');
             fetchStudents();
           }}
           className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
@@ -219,11 +216,11 @@ export default function StudentsPage() {
             onClick={() => {
               setEditingStudent(null);
               setFormData({
-                nome: "",
-                numero: "",
-                turma: "",
-                ano_letivo: "",
-                escola_id: "",
+                nome: '',
+                numero: '',
+                turma: '',
+                ano_letivo: '',
+                escola_id: '',
               });
               setIsModalOpen(true);
             }}
@@ -268,21 +265,11 @@ export default function StudentsPage() {
               {students.map((student) => (
                 <tr key={student.id}>
                   <td className="px-6 py-4 whitespace-nowrap">{student.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {student.nome}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {student.numero}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {student.turma}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {student.ano_letivo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {student.escola_nome}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.nome}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.numero}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.turma}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.ano_letivo}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.escola_nome}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => handleEdit(student)}
@@ -309,7 +296,7 @@ export default function StudentsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {editingStudent ? "Editar Aluno" : "Cadastrar Novo Aluno"}
+              {editingStudent ? 'Editar Aluno' : 'Cadastrar Novo Aluno'}
             </h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -317,9 +304,7 @@ export default function StudentsPage() {
                 <input
                   type="text"
                   value={formData.nome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nome: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   className="w-full px-3 py-2 border rounded-md"
                   required
                 />
@@ -329,9 +314,7 @@ export default function StudentsPage() {
                 <input
                   type="text"
                   value={formData.numero}
-                  onChange={(e) =>
-                    setFormData({ ...formData, numero: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                   className="w-full px-3 py-2 border rounded-md"
                   required
                 />
@@ -341,23 +324,17 @@ export default function StudentsPage() {
                 <input
                   type="text"
                   value={formData.turma}
-                  onChange={(e) =>
-                    setFormData({ ...formData, turma: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, turma: e.target.value })}
                   className="w-full px-3 py-2 border rounded-md"
                   required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">
-                  Ano Letivo
-                </label>
+                <label className="block text-sm font-medium mb-1">Ano Letivo</label>
                 <input
                   type="text"
                   value={formData.ano_letivo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, ano_letivo: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, ano_letivo: e.target.value })}
                   className="w-full px-3 py-2 border rounded-md"
                   required
                 />
@@ -366,9 +343,7 @@ export default function StudentsPage() {
                 <label className="block text-sm font-medium mb-1">Escola</label>
                 <select
                   value={formData.escola_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, escola_id: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, escola_id: e.target.value })}
                   className="w-full px-3 py-2 border rounded-md"
                   required
                 >
@@ -392,7 +367,7 @@ export default function StudentsPage() {
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                 >
-                  {editingStudent ? "Salvar" : "Cadastrar"}
+                  {editingStudent ? 'Salvar' : 'Cadastrar'}
                 </button>
               </div>
             </form>

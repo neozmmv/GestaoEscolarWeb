@@ -70,9 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   Dashboard
                 </Link>
                 <Link
-                  href="/students"
+                  href="/alunos"
                   className={`${
-                    pathname === '/students'
+                    pathname === '/alunos'
                       ? 'border-blue-500 text-gray-900'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
@@ -82,9 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 {user?.perfil === 'admin' && (
                   <>
                     <Link
-                      href="/schools"
+                      href="/escolas"
                       className={`${
-                        pathname === '/schools'
+                        pathname === '/escolas'
                           ? 'border-blue-500 text-gray-900'
                           : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                       } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
@@ -92,9 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       Escolas
                     </Link>
                     <Link
-                      href="/monitors"
+                      href="/monitores"
                       className={`${
-                        pathname === '/monitors'
+                        pathname === '/monitores'
                           ? 'border-blue-500 text-gray-900'
                           : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                       } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}

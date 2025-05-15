@@ -40,8 +40,8 @@ export async function GET() {
     const connection = await getConnection();
 
     let studentsQuery = 'SELECT COUNT(*) as total FROM alunos';
-    let schoolsQuery = 'SELECT COUNT(*) as total FROM escolas';
     let monitorsQuery = 'SELECT COUNT(*) as total FROM monitores';
+    let schoolsQuery = 'SELECT COUNT(*) as total FROM escolas';
 
     if (user.perfil !== 'admin') {
       studentsQuery += ' WHERE escola_id = ?';
@@ -53,18 +53,21 @@ export async function GET() {
       user.perfil !== 'admin' ? [user.escola_id] : []
     );
 
-    const [schoolsResult]: any = await connection.execute(schoolsQuery, []);
-
     const [monitorsResult]: any = await connection.execute(
       monitorsQuery,
       user.perfil !== 'admin' ? [user.escola_id] : []
     );
 
+    let schoolsResult: any[] = [];
+    if (user.perfil === 'admin') {
+      [schoolsResult] = await connection.execute(schoolsQuery, []);
+    }
+
     await connection.end();
 
     return NextResponse.json({
       totalStudents: studentsResult[0].total,
-      totalSchools: schoolsResult[0].total,
+      totalSchools: schoolsResult[0]?.total || 0,
       totalMonitors: monitorsResult[0].total
     });
   } catch (error) {

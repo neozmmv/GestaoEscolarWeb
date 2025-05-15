@@ -39,20 +39,11 @@ export async function GET() {
 
     const connection = await getConnection();
 
-    let query = 'SELECT id, nome FROM escolas';
-    if (user.perfil !== 'admin') {
-      query += ' WHERE id = ?';
-    }
-    query += ' ORDER BY nome';
-
-    const [rows] = await connection.execute(
-      query,
-      user.perfil !== 'admin' ? [user.escola_id] : []
-    );
+    const [rows] = await connection.execute('SELECT id, nome FROM escolas ORDER BY nome', []);
 
     await connection.end();
 
-    return NextResponse.json({ schools: rows });
+    return NextResponse.json({ escolas: rows });
   } catch (error) {
     console.error('Error fetching schools:', error);
     return NextResponse.json(

@@ -6,7 +6,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function GET() {
   try {
-    const token = cookies().get('token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value;
     if (!token) {
       return NextResponse.json(
         { error: 'Não autorizado' },
@@ -14,26 +15,19 @@ export async function GET() {
       );
     }
 
-    const decoded = verify(token, JWT_SECRET) as {
+    // Decodifica o token e retorna o usuário
+    const user = verify(token, JWT_SECRET) as {
       id: number;
       nome: string;
       perfil: string;
-      escola_id: number;
+      escola_id?: number;
     };
 
-    return NextResponse.json({
-      user: {
-        id: decoded.id,
-        nome: decoded.nome,
-        perfil: decoded.perfil,
-        escola_id: decoded.escola_id
-      }
-    });
-  } catch (error) {
-    console.error('Error verifying token:', error);
+    return NextResponse.json({ user });
+  } catch (err) {
     return NextResponse.json(
-      { error: 'Não autorizado' },
-      { status: 401 }
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
     );
   }
-} 
+}

@@ -74,12 +74,19 @@ export default function NewStudentPage() {
     setSuccess(false);
 
     try {
+      let payload = { ...formData };
+      if (user?.perfil !== 'admin') {
+        // Força escola_id igual ao do monitor
+        payload.escola_id = user?.escola_id;
+      }
+      // Se admin, já vem do select
+
       const response = await fetch('/api/alunos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -102,14 +109,7 @@ export default function NewStudentPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        name === 'ano_letivo'
-          ? parseInt(value)
-          : name === 'escola_id'
-            ? value === ''
-              ? null
-              : parseInt(value)
-            : value,
+      [name]: name === 'ano_letivo' ? parseInt(value) : value,
     }));
   };
 
@@ -211,7 +211,7 @@ export default function NewStudentPage() {
               <select
                 id="escola_id"
                 name="escola_id"
-                value={formData.escola_id}
+                value={formData.escola_id ?? ''}
                 onChange={handleChange}
                 required
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"

@@ -36,20 +36,39 @@ export default function ObservationsPage() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [schools, setSchools] = useState<{ id: number; nome: string }[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<string>('');
-  const [user, setUser] = useState<{ perfil: string } | null>(null);
+  const [user, setUser] = useState<{ perfil: string; escola_id?: number } | null>(null);
   const [editingObservationId, setEditingObservationId] = useState<number | null>(null);
   const [editObservation, setEditObservation] = useState<Partial<Observation>>({});
 
   useEffect(() => {
-    fetchStudents();
-    fetchSchools();
-    // Simulate fetching user data
-    setUser({ perfil: 'admin' }); // Remove this line in production
+    fetchUser();
   }, []);
+
+  useEffect(() => {
+    if (user?.perfil === 'admin') {
+      fetchSchools();
+      fetchStudents(selectedSchool ? Number(selectedSchool) : undefined);
+    } else if (user && user.perfil !== 'admin') {
+      fetchStudents(user.escola_id);
+    }
+  }, [user, selectedSchool]);
 
   useEffect(() => {
     setSearchTurma('');
   }, [selectedSchool]);
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        setUser(await res.json());
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      setUser(null);
+    }
+  };
 
   const fetchStudents = async (escolaId?: number) => {
     try {
@@ -224,7 +243,7 @@ export default function ObservationsPage() {
     .filter(Boolean)
     .sort();
 
-  if (loading && !selectedStudent) {
+  if (!user || (loading && !selectedStudent)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -532,7 +551,10 @@ export default function ObservationsPage() {
                                     try {
                                       // Se o usuário alterou a data, use a nova, senão use a original
                                       let dataEditada: string;
-                                      if (editObservation.data && editObservation.data !== observation.data.slice(0, 10)) {
+                                      if (
+                                        editObservation.data &&
+                                        editObservation.data !== observation.data.slice(0, 10)
+                                      ) {
                                         // Se for só a data (YYYY-MM-DD), concatene hora zero
                                         if (/^\d{4}-\d{2}-\d{2}$/.test(editObservation.data)) {
                                           dataEditada = editObservation.data + ' 00:00:00';
@@ -546,7 +568,9 @@ export default function ObservationsPage() {
 
                                       // Validação extra: nunca envie undefined ou string vazia
                                       if (!dataEditada || dataEditada.length < 10) {
-                                        alert('A data é obrigatória e deve estar no formato YYYY-MM-DD');
+                                        alert(
+                                          'A data é obrigatória e deve estar no formato YYYY-MM-DD'
+                                        );
                                         return;
                                       }
 

@@ -195,4 +195,100 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
+
+export async function PUT(request: Request) {
+  let connection;
+  try {
+    const user = await getUserFromToken();
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { id, data, disciplina, tipo, descricao, consequencia } = await request.json();
+
+    if (!id || !data || !disciplina || !tipo || !descricao) {
+      return NextResponse.json({ error: 'Todos os campos são obrigatórios' }, { status: 400 });
+    }
+
+    connection = await getConnection();
+
+    // Verificar permissão
+    let obs;
+    if (user.perfil === 'admin') {
+      [obs] = await connection.execute('SELECT * FROM observacoes WHERE id = ?', [id]);
+    } else {
+      [obs] = await connection.execute(
+        `SELECT o.* FROM observacoes o
+         JOIN alunos a ON o.aluno_id = a.id
+         WHERE o.id = ? AND a.escola_id = ?`,
+        [id, user.escola_id]
+      );
+    }
+
+    if (obs.length === 0) {
+      await connection.end();
+      return NextResponse.json({ error: 'Observação não encontrada ou não pertence à sua escola' }, { status: 404 });
+    }
+
+    await connection.execute(
+      'UPDATE observacoes SET data = ?, disciplina = ?, tipo = ?, descricao = ?, consequencia = ? WHERE id = ?',
+      [data, disciplina, tipo, descricao, consequencia || null, id]
+    );
+    await connection.end();
+
+    return NextResponse.json({ message: 'Observação atualizada com sucesso' });
+  } catch (error) {
+    console.error('Erro ao atualizar observação:', error);
+    return NextResponse.json({ error: 'Erro ao atualizar observação' }, { status: 500 });
+  } finally {
+    if (connection) await connection.end();
+  }
+}
+
+export async function DELETE(request: Request) {
+  let connection;
+  try {
+    const user = await getUserFromToken();
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID da observação é obrigatório' }, { status: 400 });
+    }
+
+    connection = await getConnection();
+
+    // Verificar permissão
+    let obs;
+    if (user.perfil === 'admin') {
+      [obs] = await connection.execute('SELECT * FROM observacoes WHERE id = ?', [id]);
+    } else {
+      [obs] = await connection.execute(
+        `SELECT o.* FROM observacoes o
+         JOIN alunos a ON o.aluno_id = a.id
+         WHERE o.id = ? AND a.escola_id = ?`,
+        [id, user.escola_id]
+      );
+    }
+
+    if (obs.length === 0) {
+      await connection.end();
+      return NextResponse.json({ error: 'Observação não encontrada ou não pertence à sua escola' }, { status: 404 });
+    }
+
+    await connection.execute('DELETE FROM observacoes WHERE id = ?', [id]);
+    await connection.end();
+
+    return NextResponse.json({ message: 'Observação excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir observação:', error);
+    return NextResponse.json({ error: 'Erro ao excluir observação' }, { status: 500 });
+  } finally {
+    if (connection) await connection.end();
+  }
+}

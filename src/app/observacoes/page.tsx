@@ -37,6 +37,8 @@ export default function ObservationsPage() {
   const [schools, setSchools] = useState<{ id: number; nome: string }[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<string>('');
   const [user, setUser] = useState<{ perfil: string } | null>(null);
+  const [editingObservationId, setEditingObservationId] = useState<number | null>(null);
+  const [editObservation, setEditObservation] = useState<Partial<Observation>>({});
 
   useEffect(() => {
     fetchStudents();
@@ -399,41 +401,244 @@ export default function ObservationsPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {observations.map((observation) => (
-                    <div
-                      key={observation.id}
-                      className={`p-4 rounded-lg border ${
-                        observation.tipo === 'positivo'
-                          ? 'border-green-200 bg-green-50'
-                          : 'border-red-200 bg-red-50'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <span className="font-semibold">
-                            {new Date(observation.data).toLocaleDateString()}
-                          </span>
-                          <span
-                            className={`ml-2 px-2 py-1 rounded text-sm ${
-                              observation.tipo === 'positivo'
-                                ? 'bg-green-200 text-green-800'
-                                : 'bg-red-200 text-red-800'
-                            }`}
-                          >
-                            {observation.tipo === 'positivo' ? 'Positivo' : 'Negativo'}
-                          </span>
+                  {observations.map((observation) => {
+                    const isEditing = editingObservationId === observation.id;
+                    return (
+                      <div
+                        key={observation.id}
+                        className={`p-4 rounded-lg border ${
+                          observation.tipo === 'positivo'
+                            ? 'border-green-200 bg-green-50'
+                            : 'border-red-200 bg-red-50'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <span className="font-semibold">
+                              {new Date(observation.data).toLocaleDateString()}
+                            </span>
+                            <span
+                              className={`ml-2 px-2 py-1 rounded text-sm ${
+                                observation.tipo === 'positivo'
+                                  ? 'bg-green-200 text-green-800'
+                                  : 'bg-red-200 text-red-800'
+                              }`}
+                            >
+                              {observation.tipo === 'positivo' ? 'Positivo' : 'Negativo'}
+                            </span>
+                          </div>
+                          <span className="text-sm text-gray-600">{observation.disciplina}</span>
                         </div>
-                        <span className="text-sm text-gray-600">{observation.disciplina}</span>
+                        <p className="text-gray-700 mb-2">{observation.descricao}</p>
+                        {observation.consequencia && (
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Consequência:</span>{' '}
+                            {observation.consequencia}
+                          </p>
+                        )}
+                        <div className="flex justify-between items-end mt-2">
+                          <div>
+                            {/* Campos de edição ou visualização */}
+                            {isEditing ? (
+                              <>
+                                <input
+                                  type="date"
+                                  value={
+                                    editObservation.data
+                                      ? editObservation.data.slice(0, 10)
+                                      : observation.data
+                                        ? observation.data.slice(0, 10)
+                                        : ''
+                                  }
+                                  onChange={(e) =>
+                                    setEditObservation({ ...editObservation, data: e.target.value })
+                                  }
+                                  className="border rounded px-2 py-1 mr-2"
+                                />
+                                <input
+                                  type="text"
+                                  value={editObservation.disciplina}
+                                  onChange={(e) =>
+                                    setEditObservation({
+                                      ...editObservation,
+                                      disciplina: e.target.value,
+                                    })
+                                  }
+                                  className="border rounded px-2 py-1 mr-2"
+                                  placeholder="Disciplina"
+                                />
+                                <select
+                                  value={editObservation.tipo}
+                                  onChange={(e) =>
+                                    setEditObservation({
+                                      ...editObservation,
+                                      tipo: e.target.value as 'positivo' | 'negativo',
+                                    })
+                                  }
+                                  className="border rounded px-2 py-1 mr-2"
+                                >
+                                  <option value="positivo">Positivo</option>
+                                  <option value="negativo">Negativo</option>
+                                </select>
+                                <input
+                                  type="text"
+                                  value={editObservation.descricao}
+                                  onChange={(e) =>
+                                    setEditObservation({
+                                      ...editObservation,
+                                      descricao: e.target.value,
+                                    })
+                                  }
+                                  className="border rounded px-2 py-1 mr-2"
+                                  placeholder="Descrição"
+                                />
+                                <input
+                                  type="text"
+                                  value={editObservation.consequencia || ''}
+                                  onChange={(e) =>
+                                    setEditObservation({
+                                      ...editObservation,
+                                      consequencia: e.target.value,
+                                    })
+                                  }
+                                  className="border rounded px-2 py-1 mr-2"
+                                  placeholder="Consequência"
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <span className="font-semibold">
+                                  {new Date(observation.data).toLocaleDateString()}
+                                </span>
+                                <span className="ml-2 text-sm">{observation.disciplina}</span>
+                                <span className="ml-2 text-sm">
+                                  {observation.tipo === 'positivo' ? 'Positivo' : 'Negativo'}
+                                </span>
+                                <span className="ml-2 text-sm">{observation.descricao}</span>
+                                {observation.consequencia && (
+                                  <span className="ml-2 text-sm">
+                                    Consequência: {observation.consequencia}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <div>
+                            {isEditing ? (
+                              <>
+                                <button
+                                  className="text-green-600 hover:text-green-800 mr-2"
+                                  onClick={async () => {
+                                    try {
+                                      // Se o usuário alterou a data, use a nova, senão use a original
+                                      let dataEditada: string;
+                                      if (editObservation.data && editObservation.data !== observation.data.slice(0, 10)) {
+                                        // Se for só a data (YYYY-MM-DD), concatene hora zero
+                                        if (/^\d{4}-\d{2}-\d{2}$/.test(editObservation.data)) {
+                                          dataEditada = editObservation.data + ' 00:00:00';
+                                        } else {
+                                          dataEditada = editObservation.data;
+                                        }
+                                      } else {
+                                        // Se o usuário não mexeu, use a data já salva (formato completo)
+                                        dataEditada = observation.data;
+                                      }
+
+                                      // Validação extra: nunca envie undefined ou string vazia
+                                      if (!dataEditada || dataEditada.length < 10) {
+                                        alert('A data é obrigatória e deve estar no formato YYYY-MM-DD');
+                                        return;
+                                      }
+
+                                      const payload = {
+                                        id: observation.id,
+                                        data: toMySQLDatetime(dataEditada),
+                                        disciplina:
+                                          editObservation.disciplina ?? observation.disciplina,
+                                        tipo: editObservation.tipo ?? observation.tipo,
+                                        descricao:
+                                          editObservation.descricao ?? observation.descricao,
+                                        consequencia:
+                                          editObservation.consequencia ??
+                                          observation.consequencia ??
+                                          null,
+                                      };
+
+                                      console.log('Payload enviado para edição:', payload);
+
+                                      const response = await fetch('/api/observacoes', {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(payload),
+                                      });
+                                      if (!response.ok) {
+                                        const data = await response.json();
+                                        throw new Error(
+                                          data.error || 'Erro ao atualizar observação'
+                                        );
+                                      }
+                                      setEditingObservationId(null);
+                                      setEditObservation({});
+                                      fetchObservations(selectedStudent!.id);
+                                    } catch (err) {
+                                      alert('Erro ao atualizar observação');
+                                    }
+                                  }}
+                                >
+                                  Salvar
+                                </button>
+                                <button
+                                  className="text-gray-600 hover:text-gray-800"
+                                  onClick={() => {
+                                    setEditingObservationId(null);
+                                    setEditObservation({});
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  className="text-yellow-600 hover:text-yellow-800 mr-2"
+                                  onClick={() => {
+                                    setEditingObservationId(observation.id);
+                                    setEditObservation(observation);
+                                  }}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  className="text-red-600 hover:text-red-800"
+                                  onClick={async () => {
+                                    if (!confirm('Tem certeza que deseja excluir esta observação?'))
+                                      return;
+                                    try {
+                                      const response = await fetch(
+                                        `/api/observacoes?id=${observation.id}`,
+                                        {
+                                          method: 'DELETE',
+                                        }
+                                      );
+                                      if (!response.ok) {
+                                        const data = await response.json();
+                                        throw new Error(data.error || 'Erro ao excluir observação');
+                                      }
+                                      fetchObservations(selectedStudent!.id);
+                                    } catch (err) {
+                                      alert('Erro ao excluir observação');
+                                    }
+                                  }}
+                                >
+                                  Excluir
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-gray-700 mb-2">{observation.descricao}</p>
-                      {observation.consequencia && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-semibold">Consequência:</span>{' '}
-                          {observation.consequencia}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -446,4 +651,18 @@ export default function ObservationsPage() {
       </div>
     </div>
   );
+}
+
+function toMySQLDatetime(dateStr: string) {
+  // Se já está no formato correto, retorna
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateStr)) return dateStr;
+  // Se está no formato ISO, converte
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(dateStr)) {
+    const d = new Date(dateStr);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+  // Se só tem a data, adiciona hora zero
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr + ' 00:00:00';
+  return dateStr;
 }

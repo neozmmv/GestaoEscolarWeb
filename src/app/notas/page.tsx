@@ -19,8 +19,10 @@ interface Subject {
 }
 
 interface Grade {
+  id: number;
   materia_id: number;
   valor: number;
+  data?: string;
 }
 
 interface School {
@@ -44,6 +46,8 @@ export default function NotasPage() {
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<string>('');
   const [user, setUser] = useState<any>(null);
+  const [editingGradeId, setEditingGradeId] = useState<number | null>(null);
+  const [editGradeValue, setEditGradeValue] = useState<number | ''>('');
 
   useEffect(() => {
     fetchUser();
@@ -162,6 +166,51 @@ export default function NotasPage() {
       alert('Nota adicionada com sucesso!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao adicionar nota');
+      console.error(err);
+    }
+  };
+
+  const handleEditGrade = async (gradeId: number) => {
+    if (editingGradeId === gradeId) {
+      // Se já estiver editando este ID, redefine para null
+      setEditingGradeId(null);
+      setEditGradeValue('');
+    } else {
+      setEditingGradeId(gradeId);
+      const gradeToEdit = grades.find((g) => g.id === gradeId);
+      if (gradeToEdit) {
+        setEditGradeValue(gradeToEdit.valor);
+      }
+    }
+  };
+
+  const handleUpdateGrade = async (gradeId: number) => {
+    if (editGradeValue === '') return;
+
+    try {
+      const response = await fetch(`/api/notas/${gradeId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          valor: editGradeValue,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao atualizar nota');
+      }
+
+      setEditingGradeId(null);
+      setEditGradeValue('');
+      if (selectedStudent) {
+        fetchGradesForStudent(selectedStudent.id);
+      }
+      alert('Nota atualizada com sucesso!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar nota');
       console.error(err);
     }
   };
@@ -496,11 +545,12 @@ export default function NotasPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {grades.map((grade, idx) => {
+                  {grades.map((grade) => {
                     const subject = subjects.find((s) => s.id === grade.materia_id);
+                    const isEditing = editingGradeId === grade.id;
                     return (
                       <div
-                        key={idx}
+                        key={grade.id}
                         className="p-3 rounded-lg border border-gray-200 bg-gray-50 flex justify-between items-center"
                       >
                         <span>
@@ -508,7 +558,92 @@ export default function NotasPage() {
                             {subject ? subject.nome : 'Matéria desconhecida'}
                           </span>
                           {': '}
-                          <span className="text-blue-700 font-bold">{grade.valor}</span>
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              value={editGradeValue}
+                              onChange={(e) => setEditGradeValue(Number(e.target.value))}
+                              className="border rounded px-2 py-1 w-20 ml-2"
+                            />
+                          ) : (
+                            <span className="text-blue-700 font-bold ml-2">{grade.valor}</span>
+                          )}
+                          {grade.data && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({new Date(grade.data).toLocaleString()})
+                            </span>
+                          )}
+                        </span>
+                        <span>
+                          {isEditing ? (
+                            <>
+                              <button
+                                className="text-green-600 hover:text-green-800 mr-2"
+                                onClick={async () => {
+                                  // Salvar edição
+                                  try {
+                                    const response = await fetch('/api/notas', {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ id: grade.id, valor: editGradeValue }),
+                                    });
+                                    if (!response.ok) {
+                                      const data = await response.json();
+                                      throw new Error(data.error || 'Erro ao atualizar nota');
+                                    }
+                                    setEditingGradeId(null);
+                                    setEditGradeValue('');
+                                    fetchGradesForStudent(selectedStudent!.id);
+                                  } catch (err) {
+                                    alert('Erro ao atualizar nota');
+                                  }
+                                }}
+                              >
+                                Salvar
+                              </button>
+                              <button
+                                className="text-gray-600 hover:text-gray-800"
+                                onClick={() => {
+                                  setEditingGradeId(null);
+                                  setEditGradeValue('');
+                                }}
+                              >
+                                Cancelar
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                className="text-yellow-600 hover:text-yellow-800 mr-2"
+                                onClick={() => {
+                                  setEditingGradeId(grade.id);
+                                  setEditGradeValue(grade.valor);
+                                }}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                className="text-red-600 hover:text-red-800"
+                                onClick={async () => {
+                                  if (!confirm('Tem certeza que deseja excluir esta nota?')) return;
+                                  try {
+                                    const response = await fetch(`/api/notas?id=${grade.id}`, {
+                                      method: 'DELETE',
+                                    });
+                                    if (!response.ok) {
+                                      const data = await response.json();
+                                      throw new Error(data.error || 'Erro ao excluir nota');
+                                    }
+                                    fetchGradesForStudent(selectedStudent!.id);
+                                  } catch (err) {
+                                    alert('Erro ao excluir nota');
+                                  }
+                                }}
+                              >
+                                Excluir
+                              </button>
+                            </>
+                          )}
                         </span>
                       </div>
                     );

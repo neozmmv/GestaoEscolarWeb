@@ -10,12 +10,14 @@ interface Student {
   numero: string;
   turma: string;
   ano_letivo: number;
-  escola_nome?: string; // <-- adicione esta linha
+  escola_nome?: string;
+  escola_id: number; // <-- obrigatório!
 }
 
 interface Subject {
   id: number;
   nome: string;
+  escola_id: number; // <-- adicione este campo
 }
 
 interface Grade {
@@ -308,6 +310,7 @@ export default function NotasPage() {
   const filteredStudents = students.filter((student) => {
     const matchesName = student.nome.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTurma = searchTurma === '' || student.turma === searchTurma;
+    // matchesEscola só filtra se selectedSchool não for vazio
     const matchesEscola = !selectedSchool || student.escola_nome === selectedSchool;
     return matchesName && matchesTurma && matchesEscola;
   });
@@ -321,9 +324,7 @@ export default function NotasPage() {
     )
   ).sort();
 
-  const escolas = Array.from(new Set(students.map((student) => student.escola_nome)))
-    .filter(Boolean)
-    .sort();
+  const escolas = schools; // schools já vem do backend e tem todas as escolas
 
   useEffect(() => {
     setSearchTurma('');
@@ -338,6 +339,9 @@ export default function NotasPage() {
       </div>
     );
   }
+
+  console.log('selectedStudent:', selectedStudent);
+  console.log('subjects:', subjects);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -380,8 +384,8 @@ export default function NotasPage() {
               >
                 <option value="">Todas as escolas</option>
                 {escolas.map((escola) => (
-                  <option key={escola} value={escola}>
-                    {escola}
+                  <option key={escola.id} value={escola.nome}>
+                    {escola.nome}
                   </option>
                 ))}
               </select>
@@ -511,11 +515,17 @@ export default function NotasPage() {
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   >
                     <option value="">Selecione uma matéria</option>
-                    {subjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.nome}
-                      </option>
-                    ))}
+                    {subjects
+                      .filter((subject) => {
+                        if (!selectedStudent) return true;
+                        if (!selectedStudent.escola_id) return false;
+                        return Number(subject.escola_id) === Number(selectedStudent.escola_id);
+                      })
+                      .map((subject) => (
+                        <option key={subject.id} value={subject.id}>
+                          {subject.nome}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="flex-1">
@@ -661,3 +671,8 @@ export default function NotasPage() {
     </div>
   );
 }
+
+/* Debug logs can be placed inside the component function, before return, for proper scope */
+// Example:
+// console.log('selectedStudent:', selectedStudent);
+// console.log('subjects:', subjects);

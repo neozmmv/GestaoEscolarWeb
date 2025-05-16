@@ -42,14 +42,19 @@ export async function GET(request: Request) {
 
     // Se for admin, busca todos os alunos de todas as escolas
     // Se não for admin, busca apenas os alunos da escola do monitor
-    const [rows]: any = await connection.execute(
-      `SELECT alunos.id, alunos.nome, alunos.numero, alunos.turma, alunos.ano_letivo, escolas.nome AS escola_nome
-      FROM alunos
-      JOIN escolas ON alunos.escola_id = escolas.id
-      ${user.perfil !== 'admin' ? 'WHERE alunos.escola_id = ?' : ''} 
-      ORDER BY escolas.nome, alunos.nome`,
+    let [rows]: any = await connection.execute(
+      `SELECT alunos.id, alunos.nome, alunos.numero, alunos.turma, alunos.ano_letivo, alunos.escola_id, escolas.nome AS escola_nome
+       FROM alunos
+       JOIN escolas ON alunos.escola_id = escolas.id
+       ${user.perfil !== 'admin' ? 'WHERE alunos.escola_id = ?' : ''} 
+       ORDER BY escolas.nome, alunos.nome`,
       user.perfil !== 'admin' ? [user.escola_id] : []
     );
+
+    rows = rows.map((row: any) => ({
+      ...row,
+      escola_id: Number(row.escola_id),
+    }));
 
     await connection.end();
 

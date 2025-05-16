@@ -127,9 +127,17 @@ export default function SubjectsPage() {
     }
   };
 
-  const handleSchoolChange = (schoolId: number) => {
+  const handleSchoolChange = (schoolId: number | null) => {
     setSelectedSchool(schoolId);
-    fetchSubjectsBySchool(schoolId);
+    if (user?.perfil === 'admin') {
+      if (!schoolId) {
+        fetchAllSubjects(); // Mostra todas as matérias de todas as escolas
+      } else {
+        fetchSubjectsBySchool(schoolId);
+      }
+    } else if (schoolId) {
+      fetchSubjectsBySchool(schoolId);
+    }
   };
 
   const handleAddSubject = async () => {
@@ -154,7 +162,9 @@ export default function SubjectsPage() {
       }
 
       setNewSubject('');
-      // Recarregar a lista de matérias
+      setSelectedSchool(null); // <-- Adicione esta linha
+
+      // Recarregar a lista de matérias (todas as escolas)
       if (user?.perfil === 'admin') {
         fetchAllSubjects();
       } else {
@@ -226,10 +236,10 @@ export default function SubjectsPage() {
             <label className="block text-gray-700 text-sm font-bold mb-2">Escola</label>
             <select
               value={selectedSchool || ''}
-              onChange={(e) => handleSchoolChange(Number(e.target.value))}
+              onChange={(e) => handleSchoolChange(e.target.value ? Number(e.target.value) : null)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             >
-              <option value="">Selecione uma escola</option>
+              <option value="">Todas as escolas</option>
               {schools.map((school) => (
                 <option key={school.id} value={school.id}>
                   {school.nome}

@@ -40,43 +40,39 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const escolaId = searchParams.get('escola_id');
-
     connection = await getConnection();
 
-    let query = `
-      SELECT m.*, e.nome as escola_nome 
-      FROM materias m 
-      JOIN escolas_materias em ON m.id = em.materia_id
-      JOIN escolas e ON em.escola_id = e.id
-    `;
-    let params: any[] = [];
-
-    if (user.perfil !== 'admin') {
-      query += ' WHERE em.escola_id = ?';
-      params.push(user.escola_id);
-    } else if (escolaId) {
-      query += ' WHERE em.escola_id = ?';
-      params.push(escolaId);
+    let rows;
+    if (user.perfil === 'admin') {
+      // Admin vê todas as matérias de todas as escolas
+      [rows] = await connection.execute(
+        'SELECT id, nome, escola_id FROM materias ORDER BY nome',
+        []
+      );
+    } else {
+      // Monitor/professor vê apenas matérias da sua escola
+      [rows] = await connection.execute(
+        'SELECT id, nome, escola_id FROM materias WHERE escola_id = ? ORDER BY nome',
+        [user.escola_id]
+      );
     }
 
-    query += ' ORDER BY m.nome';
+    rows = rows.map((row: any) => ({
+      ...row,
+      escola_id: Number(row.escola_id),
+    }));
 
-    const [rows]: any = await connection.execute(query, params);
+    await connection.end();
     return NextResponse.json(rows);
   } catch (error) {
-    console.error('Error fetching subjects:', error);
-    return NextResponse.json(
-      { error: 'Erro ao carregar matérias. Por favor, tente novamente.' },
-      { status: 500 }
-    );
+    console.error('Erro ao buscar matérias:', error);
+    return NextResponse.json({ error: 'Erro ao buscar matérias' }, { status: 500 });
   } finally {
     if (connection) {
       try {
         await connection.end();
       } catch (err) {
-        console.error('Error closing connection:', err);
+        console.error('Erro ao fechar conexão:', err);
       }
     }
   }
@@ -91,7 +87,6 @@ export async function POST(request: Request) {
     }
 
     const { nome, escola_id } = await request.json();
-
     if (!nome || !escola_id) {
       return NextResponse.json(
         { error: 'Nome e escola são obrigatórios' },
@@ -108,9 +103,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const escolaIdNum = Number(escola_id);
+
     const [escolas]: any = await connection.execute(
       'SELECT id FROM escolas WHERE id = ?',
-      [escola_id]
+      [escolaIdNum]
     );
 
     if (escolas.length === 0) {
@@ -121,15 +118,15 @@ export async function POST(request: Request) {
     }
 
     const [result]: any = await connection.execute(
-      'INSERT INTO materias (nome) VALUES (?)',
-      [nome]
+      'INSERT INTO materias (nome, escola_id) VALUES (?, ?)',
+      [nome, escola_id]
     );
 
     const materiaId = result.insertId;
 
     await connection.execute(
       'INSERT INTO escolas_materias (escola_id, materia_id) VALUES (?, ?)',
-      [escola_id, materiaId]
+      [escolaIdNum, materiaId]
     );
 
     return NextResponse.json({ message: 'Matéria adicionada com sucesso' });

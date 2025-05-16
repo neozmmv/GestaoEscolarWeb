@@ -47,11 +47,11 @@ export default function ObservationsPage() {
   useEffect(() => {
     if (user?.perfil === 'admin') {
       fetchSchools();
-      fetchStudents(selectedSchool ? Number(selectedSchool) : undefined);
+      fetchAllStudents(); // carrega todos os alunos de todas as escolas
     } else if (user && user.perfil !== 'admin') {
       fetchStudents(user.escola_id);
     }
-  }, [user, selectedSchool]);
+  }, [user]);
 
   useEffect(() => {
     setSearchTurma('');
@@ -80,6 +80,21 @@ export default function ObservationsPage() {
         url += `?escola_id=${escolaId}`;
       }
       const response = await fetch(url);
+      if (!response.ok) throw new Error('Erro ao carregar alunos');
+      const data = await response.json();
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao carregar alunos');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllStudents = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/alunos');
       if (!response.ok) throw new Error('Erro ao carregar alunos');
       const data = await response.json();
       setStudents(Array.isArray(data) ? data : []);

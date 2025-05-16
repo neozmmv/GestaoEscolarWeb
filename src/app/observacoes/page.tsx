@@ -35,7 +35,7 @@ export default function ObservationsPage() {
   const [searchTurma, setSearchTurma] = useState('');
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [schools, setSchools] = useState<{ id: number; nome: string }[]>([]);
-  const [selectedSchool, setSelectedSchool] = useState<string>('');
+  const [selectedSchool, setSelectedSchool] = useState<string>(''); // pode ser string ou number, mas usaremos string para o select
   const [user, setUser] = useState<{ perfil: string; escola_id?: number } | null>(null);
   const [editingObservationId, setEditingObservationId] = useState<number | null>(null);
   const [editObservation, setEditObservation] = useState<Partial<Observation>>({});
@@ -61,7 +61,9 @@ export default function ObservationsPage() {
     try {
       const res = await fetch('/api/auth/me');
       if (res.ok) {
-        setUser(await res.json());
+        const data = await res.json();
+        // Se vier { user: { ... } }
+        setUser(data.user ? data.user : data);
       } else {
         setUser(null);
       }
@@ -243,6 +245,9 @@ export default function ObservationsPage() {
     .filter(Boolean)
     .sort();
 
+  console.log('user:', user);
+  console.log('schools:', schools);
+
   if (!user || (loading && !selectedStudent)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -290,9 +295,9 @@ export default function ObservationsPage() {
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               >
                 <option value="">Todas as escolas</option>
-                {escolas.map((escola) => (
-                  <option key={escola} value={escola}>
-                    {escola}
+                {schools.map((escola) => (
+                  <option key={escola.id} value={escola.nome}>
+                    {escola.nome}
                   </option>
                 ))}
               </select>

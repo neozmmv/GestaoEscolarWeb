@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     perfil: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Verificar se o usuário está autenticado
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 <div className="flex-shrink-0 flex items-center">
                   <span className="text-xl font-bold text-gray-800">Sistema de Gestão Escolar</span>
                 </div>
+                {/* Desktop menu */}
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                   <Link
                     href="/dashboard"
@@ -144,6 +146,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
               </div>
+              {/* Mobile hamburger */}
+              <div className="flex items-center sm:hidden">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200 focus:outline-none"
+                  aria-label="Abrir menu"
+                >
+                  <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                    {mobileMenuOpen ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                    )}
+                  </svg>
+                </button>
+              </div>
+              {/* Usuário e sair (desktop) */}
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
                 <div className="ml-3 relative">
                   <div className="flex items-center space-x-4">
@@ -159,8 +178,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </div>
+          {/* Mobile dropdown */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden px-2 pt-2 pb-3 space-y-1 bg-white border-b">
+              <Link href="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100">Dashboard</Link>
+              <Link href="/alunos" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100">Alunos</Link>
+              <Link href="/observacoes" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100">Observações</Link>
+              <Link href="/materias" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100">Matérias</Link>
+              <Link href="/notas" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100">Notas</Link>
+              {user?.perfil === 'admin' && (
+                <>
+                  <Link href="/escolas" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100">Escolas</Link>
+                  <Link href="/monitores" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-100">Monitores</Link>
+                </>
+              )}
+              <div className="border-t mt-2 pt-2 flex items-center justify-between">
+                <span className="text-sm text-gray-700">Olá, {user?.nome}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Sair
+                </button>
+              </div>
+            </div>
+          )}
         </nav>
-
         {/* Main Content */}
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">{children}</main>
       </div>

@@ -45,11 +45,31 @@ export default function EditarMonitorPage() {
       const response = await fetch(`/api/monitores?id=${monitorId}`);
       if (!response.ok) throw new Error('Erro ao carregar monitor');
       const data = await response.json();
+      console.log('data:', data);
+      const monitorIdNumber = Number(monitorId);
+      interface Monitor {
+        id: number;
+        nome: string;
+        cpf: string;
+        perfil: string;
+        escola_id?: number;
+      }
+
+      interface MonitoresResponse {
+        monitores?: Monitor[];
+      }
+
+      const monitor: Monitor | undefined =
+        (data as MonitoresResponse).monitores &&
+        Array.isArray((data as MonitoresResponse).monitores)
+          ? (data as MonitoresResponse).monitores!.find((m: Monitor) => m.id === monitorIdNumber)
+          : (data as Monitor);
+      console.log('monitor:', monitor);
       setFormData({
-        nome: data.nome ?? '',
-        cpf: data.cpf ?? '',
-        perfil: data.perfil ?? 'monitor',
-        escola_id: data.escola_id ? String(data.escola_id) : '', // sempre string
+        nome: monitor?.nome ?? '',
+        cpf: monitor?.cpf ?? '',
+        perfil: monitor?.perfil ?? 'monitor',
+        escola_id: monitor?.escola_id ? String(monitor.escola_id) : '',
       });
     } catch (err) {
       setError('Erro ao carregar monitor');

@@ -31,12 +31,14 @@ export default function EditStudentPage() {
         const response = await fetch(`/api/alunos?id=${params.id}`);
         if (!response.ok) throw new Error('Erro ao carregar aluno');
         const data = await response.json();
+        // Se o backend retorna um array, pegue o primeiro elemento:
+        const aluno = Array.isArray(data) ? data[0] : data;
         setFormData({
-          id: data.id ?? 0,
-          nome: data.nome ?? '',
-          numero: data.numero ?? '',
-          turma: data.turma ?? '',
-          ano_letivo: data.ano_letivo ?? new Date().getFullYear(),
+          id: aluno.id ?? 0,
+          nome: aluno.nome ?? '',
+          numero: aluno.numero ?? '',
+          turma: aluno.turma ?? '',
+          ano_letivo: aluno.ano_letivo ?? new Date().getFullYear(),
         });
       } catch (err) {
         setError('Erro ao carregar aluno');

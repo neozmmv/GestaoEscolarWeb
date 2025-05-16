@@ -42,17 +42,40 @@ export async function GET(request: Request) {
 
     connection = await getConnection();
 
+    // Pegue o parâmetro escola_id da query string
+    const { searchParams } = new URL(request.url);
+    const escola_id = searchParams.get('escola_id');
+
     let rows;
     if (user.perfil === 'admin') {
-      // Admin vê todas as matérias de todas as escolas
-      [rows] = await connection.execute(
-        'SELECT id, nome, escola_id FROM materias ORDER BY nome',
-        []
-      );
+      if (escola_id) {
+        // Filtra matérias por escola
+        [rows] = await connection.execute(
+          `SELECT materias.id, materias.nome, materias.escola_id, escolas.nome AS escola_nome
+           FROM materias
+           JOIN escolas ON materias.escola_id = escolas.id
+           WHERE materias.escola_id = ?
+           ORDER BY materias.nome`,
+          [Number(escola_id)]
+        );
+      } else {
+        // Todas as matérias de todas as escolas
+        [rows] = await connection.execute(
+          `SELECT materias.id, materias.nome, materias.escola_id, escolas.nome AS escola_nome
+           FROM materias
+           JOIN escolas ON materias.escola_id = escolas.id
+           ORDER BY escolas.nome, materias.nome`,
+          []
+        );
+      }
     } else {
       // Monitor/professor vê apenas matérias da sua escola
       [rows] = await connection.execute(
-        'SELECT id, nome, escola_id FROM materias WHERE escola_id = ? ORDER BY nome',
+        `SELECT materias.id, materias.nome, materias.escola_id, escolas.nome AS escola_nome
+         FROM materias
+         JOIN escolas ON materias.escola_id = escolas.id
+         WHERE materias.escola_id = ?
+         ORDER BY materias.nome`,
         [user.escola_id]
       );
     }

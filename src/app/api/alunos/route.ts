@@ -15,7 +15,8 @@ async function getConnection() {
 }
 
 async function getUserFromToken() {
-  const token = cookies().get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
   if (!token) return null;
 
   try {
@@ -42,11 +43,11 @@ export async function GET(request: Request) {
     // Se for admin, busca todos os alunos de todas as escolas
     // Se não for admin, busca apenas os alunos da escola do monitor
     const [rows]: any = await connection.execute(
-      `SELECT a.*, e.nome as escola_nome 
-      FROM alunos a
-      JOIN escolas e ON a.escola_id = e.id
-       ${user.perfil !== 'admin' ? 'WHERE a.escola_id = ?' : ''} 
-       ORDER BY e.nome, a.nome`,
+      `SELECT alunos.id, alunos.nome, alunos.numero, alunos.turma, alunos.ano_letivo, escolas.nome AS escola_nome
+      FROM alunos
+      JOIN escolas ON alunos.escola_id = escolas.id
+      ${user.perfil !== 'admin' ? 'WHERE alunos.escola_id = ?' : ''} 
+      ORDER BY escolas.nome, alunos.nome`,
       user.perfil !== 'admin' ? [user.escola_id] : []
     );
 
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
     // Inserir novo aluno
     const [result]: any = await connection.execute(
       'INSERT INTO alunos (nome, numero, turma, ano_letivo, escola_id) VALUES (?, ?, ?, ?, ?)',
-      [nome, numero, turma, ano_letivo, escolaIdToUse]
+      [nome, numero, turma, ano_letivo, escola_id ?? null]
     );
 
     await connection.end();
@@ -149,10 +150,17 @@ export async function PUT(request: Request) {
     const connection = await getConnection();
 
     // Verificar se o aluno pertence à escola do monitor
-    const [alunos]: any = await connection.execute(
-      'SELECT id FROM alunos WHERE id = ? AND escola_id = ?',
-      [id, user.escola_id]
-    );
+    let alunos;
+    if (user.perfil === 'admin') {
+      [alunos] = await connection.execute('SELECT id, escola_id FROM alunos WHERE id = ?', [
+        id,
+      ]);
+    } else {
+      [alunos] = await connection.execute(
+        'SELECT id, escola_id FROM alunos WHERE id = ? AND escola_id = ?',
+        [id, user.escola_id]
+      );
+    }
 
     if (alunos.length === 0) {
       await connection.end();
@@ -162,10 +170,12 @@ export async function PUT(request: Request) {
       );
     }
 
+    const escolaIdDoAluno = alunos[0].escola_id;
+
     // Verificar se já existe outro aluno com o mesmo número na escola
     const [existingStudents]: any = await connection.execute(
       'SELECT id FROM alunos WHERE numero = ? AND escola_id = ? AND id != ?',
-      [numero, user.escola_id, id]
+      [numero, escolaIdDoAluno, id]
     );
 
     if (existingStudents.length > 0) {
@@ -176,7 +186,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Atualizar aluno
+    // Atualizar aluno (NÃO altera escola_id)
     await connection.execute(
       'UPDATE alunos SET nome = ?, numero = ?, turma = ?, ano_letivo = ? WHERE id = ?',
       [nome, numero, turma, ano_letivo, id]
@@ -190,7 +200,7 @@ export async function PUT(request: Request) {
       numero,
       turma,
       ano_letivo,
-      escola_id: user.escola_id,
+      escola_id: escolaIdDoAluno, // Corrigido: retorna o escola_id do aluno
     });
   } catch (error) {
     console.error('Error updating student:', error);
@@ -221,10 +231,17 @@ export async function DELETE(request: Request) {
     const connection = await getConnection();
 
     // Verificar se o aluno pertence à escola do monitor
-    const [alunos]: any = await connection.execute(
-      'SELECT id FROM alunos WHERE id = ? AND escola_id = ?',
-      [id, user.escola_id]
-    );
+    let alunos;
+    if (user.perfil === 'admin') {
+      [alunos] = await connection.execute('SELECT id FROM alunos WHERE id = ?', [
+        id,
+      ]);
+    } else {
+      [alunos] = await connection.execute(
+        'SELECT id FROM alunos WHERE id = ? AND escola_id = ?',
+        [id, user.escola_id]
+      );
+    }
 
     if (alunos.length === 0) {
       await connection.end();
@@ -247,4 +264,4 @@ export async function DELETE(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

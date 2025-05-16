@@ -15,7 +15,8 @@ async function getConnection() {
 }
 
 async function getUserFromToken() {
-  const token = cookies().get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
   if (!token) return null;
 
   try {
@@ -30,7 +31,7 @@ async function getUserFromToken() {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const user = await getUserFromToken();
     if (!user) {
@@ -39,15 +40,21 @@ export async function GET() {
 
     const connection = await getConnection();
 
-    const [rows] = await connection.execute('SELECT id, nome FROM escolas ORDER BY nome', []);
+    let rows;
+    if (user.perfil === 'admin') {
+      // Admin vê todas as escolas
+      [rows] = await connection.execute('SELECT id, nome FROM escolas ORDER BY nome', []);
+    } else {
+      // Monitor/professor vê apenas sua escola
+      [rows] = await connection.execute('SELECT id, nome FROM escolas WHERE id = ?', [user.escola_id]);
+    }
 
     await connection.end();
-
-    return NextResponse.json({ escolas: rows });
+    return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching schools:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro ao carregar escolas' },
       { status: 500 }
     );
   }
@@ -164,4 +171,4 @@ export async function DELETE(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

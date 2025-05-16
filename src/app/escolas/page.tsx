@@ -53,7 +53,7 @@ export default function EscolasPage() {
       const response = await fetch('/api/escolas');
       if (!response.ok) throw new Error('Erro ao carregar escolas');
       const data = await response.json();
-      setEscolas(data.escolas || []);
+      setEscolas(Array.isArray(data) ? data : []);
     } catch (err) {
       setError('Erro ao carregar escolas');
       console.error('Erro:', err);

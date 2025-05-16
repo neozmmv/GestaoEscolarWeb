@@ -60,7 +60,7 @@ export default function NewStudentPage() {
       const response = await fetch('/api/escolas');
       if (!response.ok) throw new Error('Erro ao carregar escolas');
       const data = await response.json();
-      setSchools(Array.isArray(data.schools) ? data.schools : []);
+      setSchools(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
       setSchools([]);
@@ -74,11 +74,6 @@ export default function NewStudentPage() {
     setSuccess(false);
 
     try {
-      // Se não for admin, adiciona o escola_id do usuário
-      if (user?.perfil !== 'admin') {
-        formData.escola_id = user?.escola_id;
-      }
-
       const response = await fetch('/api/alunos', {
         method: 'POST',
         headers: {
@@ -89,7 +84,7 @@ export default function NewStudentPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Erro ao cadastrar aluno');
+        throw new Error(data.error || 'Erro ao atualizar aluno');
       }
 
       setSuccess(true);
@@ -97,7 +92,7 @@ export default function NewStudentPage() {
         router.push('/alunos');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Erro ao cadastrar aluno');
+      setError(err.message || 'Erro ao atualizar aluno');
     } finally {
       setLoading(false);
     }
@@ -107,7 +102,14 @@ export default function NewStudentPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'ano_letivo' ? parseInt(value) : value,
+      [name]:
+        name === 'ano_letivo'
+          ? parseInt(value)
+          : name === 'escola_id'
+            ? value === ''
+              ? null
+              : parseInt(value)
+            : value,
     }));
   };
 

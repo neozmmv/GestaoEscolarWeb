@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../providers/AuthProvider';
 
 interface Monitor {
   id: number;
@@ -29,6 +30,13 @@ export default function MonitoresPage() {
   const [sortField, setSortField] = useState<keyof Monitor>('nome');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const router = useRouter();
+  const { user: authUser, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && authUser?.perfil !== 'admin') {
+      router.replace('/dashboard'); // Redireciona se não for admin
+    }
+  }, [authUser, authLoading, router]);
 
   useEffect(() => {
     fetchUser();
@@ -122,12 +130,8 @@ export default function MonitoresPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  if (loading || authLoading || user?.perfil !== 'admin') {
+    return <div className="p-8 text-center">Acesso restrito...</div>;
   }
 
   if (error) {

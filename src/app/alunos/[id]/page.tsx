@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 interface Student {
   id: number;
@@ -11,7 +11,8 @@ interface Student {
   ano_letivo: number;
 }
 
-export default function EditStudentPage({ params }: { params: { id: string } }) {
+export default function EditStudentPage() {
+  const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,23 +25,30 @@ export default function EditStudentPage({ params }: { params: { id: string } }) 
   });
 
   useEffect(() => {
-    fetchStudent();
-  }, [params.id]);
+    const fetchStudent = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/alunos?id=${params.id}`);
+        if (!response.ok) throw new Error('Erro ao carregar aluno');
+        const data = await response.json();
+        setFormData({
+          id: data.id ?? 0,
+          nome: data.nome ?? '',
+          numero: data.numero ?? '',
+          turma: data.turma ?? '',
+          ano_letivo: data.ano_letivo ?? new Date().getFullYear(),
+        });
+      } catch (err) {
+        setError('Erro ao carregar aluno');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchStudent = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/alunos?id=${params.id}`);
-      if (!response.ok) throw new Error('Erro ao carregar aluno');
-      const data = await response.json();
-      setFormData(data);
-    } catch (err) {
-      setError('Erro ao carregar aluno');
-      console.error(err);
-    } finally {
-      setLoading(false);
+    if (params.id) {
+      fetchStudent();
     }
-  };
+  }, [params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,15 +56,23 @@ export default function EditStudentPage({ params }: { params: { id: string } }) 
     setError('');
 
     try {
+      const payload = {
+        ...formData,
+        id: formData.id || params.id, // garante que o id vai no corpo
+      };
+
       const response = await fetch(`/api/alunos?id=${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error('Erro ao atualizar aluno');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao atualizar aluno');
+      }
 
       router.push('/alunos');
     } catch (err) {

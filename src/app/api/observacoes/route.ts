@@ -15,7 +15,8 @@ async function getConnection() {
 }
 
 async function getUserFromToken() {
-  const token = cookies().get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
   if (!token) return null;
 
   try {
@@ -49,18 +50,50 @@ export async function GET(request: Request) {
 
     const connection = await getConnection();
 
-    // Verificar se o aluno pertence à escola do monitor
+    try {
+      // Se for admin, não precisa verificar a escola
+      if (user.perfil !== 'admin') {
+        // Verificar se o aluno existe e pertence à escola do monitor
     const [alunos]: any = await connection.execute(
       'SELECT id FROM alunos WHERE id = ? AND escola_id = ?',
       [alunoId, user.escola_id]
     );
 
     if (alunos.length === 0) {
+          // Verificar se o aluno existe em outra escola
+          const [alunoExiste]: any = await connection.execute(
+            'SELECT id FROM alunos WHERE id = ?',
+            [alunoId]
+          );
+
+          if (alunoExiste.length === 0) {
+            await connection.end();
+            return NextResponse.json(
+              { error: 'Aluno não encontrado' },
+              { status: 404 }
+            );
+          } else {
+            await connection.end();
+            return NextResponse.json(
+              { error: 'Aluno não pertence à sua escola' },
+              { status: 403 }
+            );
+          }
+        }
+      } else {
+        // Para admin, apenas verificar se o aluno existe
+        const [alunoExiste]: any = await connection.execute(
+          'SELECT id FROM alunos WHERE id = ?',
+          [alunoId]
+        );
+
+        if (alunoExiste.length === 0) {
       await connection.end();
       return NextResponse.json(
-        { error: 'Aluno não encontrado ou não pertence à sua escola' },
+            { error: 'Aluno não encontrado' },
         { status: 404 }
       );
+        }
     }
 
     // Buscar observações do aluno
@@ -74,8 +107,11 @@ export async function GET(request: Request) {
     );
 
     await connection.end();
-
     return NextResponse.json(rows);
+    } catch (error) {
+      await connection.end();
+      throw error;
+    }
   } catch (error) {
     console.error('Error fetching observations:', error);
     return NextResponse.json(
@@ -110,7 +146,23 @@ export async function POST(request: Request) {
 
     const connection = await getConnection();
 
-    // Verificar se o aluno pertence à escola do monitor
+    try {
+      // Se for admin, apenas verificar se o aluno existe
+      if (user.perfil === 'admin') {
+        const [alunoExiste]: any = await connection.execute(
+          'SELECT id FROM alunos WHERE id = ?',
+          [aluno_id]
+        );
+
+        if (alunoExiste.length === 0) {
+          await connection.end();
+          return NextResponse.json(
+            { error: 'Aluno não encontrado' },
+            { status: 404 }
+          );
+        }
+      } else {
+        // Para não-admin, verificar se o aluno pertence à escola do monitor
     const [alunos]: any = await connection.execute(
       'SELECT id FROM alunos WHERE id = ? AND escola_id = ?',
       [aluno_id, user.escola_id]
@@ -122,6 +174,7 @@ export async function POST(request: Request) {
         { error: 'Aluno não encontrado ou não pertence à sua escola' },
         { status: 404 }
       );
+        }
     }
 
     await connection.execute(
@@ -130,8 +183,11 @@ export async function POST(request: Request) {
     );
 
     await connection.end();
-
     return NextResponse.json({ message: 'Observação registrada com sucesso' });
+    } catch (error) {
+      await connection.end();
+      throw error;
+    }
   } catch (error) {
     console.error('Error creating observation:', error);
     return NextResponse.json(

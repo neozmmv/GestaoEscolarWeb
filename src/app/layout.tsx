@@ -9,7 +9,7 @@ const inter = Inter({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
         <AuthProvider>{children}</AuthProvider>
       </body>

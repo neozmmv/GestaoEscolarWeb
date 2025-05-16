@@ -10,46 +10,78 @@ interface Student {
   numero: string;
   turma: string;
   ano_letivo: number;
-  escola_id: number;
-  escola_nome?: string;
+  escola_nome?: string; // <-- adicione esta linha
 }
 
-interface Observation {
+interface Subject {
   id: number;
-  aluno_id: number;
-  data: string;
-  disciplina: string;
-  tipo: 'positivo' | 'negativo';
-  descricao: string;
-  consequencia?: string;
+  nome: string;
 }
 
-export default function ObservationsPage() {
+interface Grade {
+  materia_id: number;
+  valor: number;
+}
+
+interface School {
+  id: number;
+  nome: string;
+}
+
+export default function NotasPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
-  const [observations, setObservations] = useState<Observation[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
+  const [grade, setGrade] = useState<number | ''>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchTurma, setSearchTurma] = useState('');
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [schools, setSchools] = useState<{ id: number; nome: string }[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<string>('');
-  const [user, setUser] = useState<{ perfil: string } | null>(null);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    fetchStudents();
-    fetchSchools();
-    // Simulate fetching user data
-    setUser({ perfil: 'admin' }); // Remove this line in production
+    fetchUser();
   }, []);
 
   useEffect(() => {
-    setSearchTurma('');
-  }, [selectedSchool]);
+    if (user?.perfil === 'admin') {
+      fetchSchools();
+    }
+  }, [user]);
 
-  const fetchStudents = async (escolaId?: number) => {
+  useEffect(() => {
+    if (user?.perfil === 'admin') {
+      fetchStudents(selectedSchool ? Number(selectedSchool) : null); // Busca todos se selectedSchool for null
+    } else if (user && user.perfil !== 'admin') {
+      fetchStudents(user.escola_id);
+    }
+  }, [user, selectedSchool]);
+
+  useEffect(() => {
+    fetchSubjects();
+  }, []);
+
+  const fetchUser = async () => {
+    const res = await fetch('/api/user');
+    if (res.ok) {
+      setUser(await res.json());
+    }
+  };
+
+  const fetchSchools = async () => {
+    const res = await fetch('/api/escolas');
+    if (res.ok) {
+      setSchools(await res.json());
+    }
+  };
+
+  const fetchStudents = async (escolaId?: number | null) => {
     try {
       setLoading(true);
       let url = '/api/alunos';
@@ -68,34 +100,28 @@ export default function ObservationsPage() {
     }
   };
 
-  const fetchSchools = async () => {
+  const fetchSubjects = async () => {
     try {
-      const response = await fetch('/api/escolas');
-      if (!response.ok) throw new Error('Erro ao carregar escolas');
+      const response = await fetch('/api/materias');
+      if (!response.ok) throw new Error('Erro ao carregar matérias');
       const data = await response.json();
-      setSchools(Array.isArray(data) ? data : []);
+      setSubjects(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Erro ao carregar escolas:', err);
+      setError('Erro ao carregar matérias');
+      console.error(err);
     }
   };
 
-  const fetchObservations = async (studentId: number) => {
+  const fetchGradesForStudent = async (studentId: number) => {
     try {
       setLoading(true);
-      setError(''); // Clear any previous errors
-      const response = await fetch(`/api/observacoes?aluno_id=${studentId}`);
+      const response = await fetch(`/api/notas?aluno_id=${studentId}`);
+      if (!response.ok) throw new Error('Erro ao buscar notas');
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao carregar observações');
-      }
-
-      setObservations(Array.isArray(data) ? data : []);
+      setGrades(Array.isArray(data) ? data : []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar observações';
-      setError(errorMessage);
-      console.error('Error fetching observations:', err);
-      setObservations([]); // Clear observations on error
+      setError('Erro ao buscar notas');
+      setGrades([]);
     } finally {
       setLoading(false);
     }
@@ -103,7 +129,41 @@ export default function ObservationsPage() {
 
   const handleStudentSelect = (student: Student) => {
     setSelectedStudent(student);
-    fetchObservations(student.id);
+    setSelectedSubject(null);
+    setGrade('');
+    fetchGradesForStudent(student.id);
+  };
+
+  const handleAddGrade = async () => {
+    if (selectedStudent === null || selectedSubject === null || grade === '') return;
+
+    try {
+      const response = await fetch('/api/notas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          aluno_id: selectedStudent.id,
+          materia_id: selectedSubject,
+          valor: grade,
+          data: new Date().toISOString().slice(0, 10),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao adicionar nota');
+      }
+
+      setSelectedSubject(null);
+      setGrade('');
+      fetchGradesForStudent(selectedStudent.id);
+      alert('Nota adicionada com sucesso!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao adicionar nota');
+      console.error(err);
+    }
   };
 
   const generatePDF = async () => {
@@ -112,7 +172,6 @@ export default function ObservationsPage() {
     try {
       setGeneratingPdf(true);
 
-      // Criar novo documento PDF
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 20;
@@ -120,7 +179,7 @@ export default function ObservationsPage() {
 
       // Cabeçalho
       doc.setFontSize(16);
-      doc.text('Relatório de Observações', pageWidth / 2, y, { align: 'center' });
+      doc.text('Relatório de Notas', pageWidth / 2, y, { align: 'center' });
       y += 20;
 
       // Informações do Aluno
@@ -138,47 +197,42 @@ export default function ObservationsPage() {
       y += 7;
       if (selectedStudent.escola_nome) {
         doc.text(`Escola: ${selectedStudent.escola_nome}`, margin, y);
-        y += 7;
-      }
-      y += 10;
-
-      // Observações
-      doc.setFontSize(12);
-      doc.text('Observações:', margin, y);
-      y += 10;
-
-      // Adicionar cada observação
-      observations.forEach((obs, index) => {
-        // Verificar se precisa de nova página
-        if (y > 250) {
-          doc.addPage();
-          y = 20;
-        }
-
-        doc.setFontSize(10);
-        const data = new Date(obs.data).toLocaleDateString();
-        const tipo = obs.tipo === 'positivo' ? 'Positivo' : 'Negativo';
-
-        // Cabeçalho da observação
-        doc.setFillColor(obs.tipo === 'positivo' ? '#e6ffe6' : '#ffe6e6');
-        doc.rect(margin - 5, y - 5, pageWidth - margin * 2 + 10, 40, 'F');
-
-        doc.text(`Data: ${data}`, margin, y);
-        y += 7;
-        doc.text(`Disciplina: ${obs.disciplina}`, margin, y);
-        y += 7;
-        doc.text(`Tipo: ${tipo}`, margin, y);
-        y += 7;
-        doc.text(`Descrição: ${obs.descricao}`, margin, y);
-        y += 7;
-
-        if (obs.consequencia) {
-          doc.text(`Consequência: ${obs.consequencia}`, margin, y);
-          y += 7;
-        }
-
         y += 10;
-      });
+      } else {
+        y += 3;
+      }
+
+      // Notas
+      doc.setFontSize(12);
+      doc.text('Notas:', margin, y);
+      y += 10;
+
+      doc.setFontSize(10);
+      if (grades.length === 0) {
+        doc.text('Nenhuma nota encontrada.', margin, y);
+        y += 7;
+      } else {
+        grades.forEach((grade, idx) => {
+          if (y > 250) {
+            doc.addPage();
+            y = 20;
+          }
+
+          // Cor de fundo: azul se >= 5, vermelho se < 5
+          if (Number(grade.valor) >= 5) {
+            doc.setFillColor(220, 235, 255); // azul claro
+          } else {
+            doc.setFillColor(255, 220, 220); // vermelho claro
+          }
+          doc.rect(margin - 5, y - 5, pageWidth - margin * 2 + 10, 20, 'F');
+
+          const subject = subjects.find((s) => s.id === grade.materia_id);
+          doc.text(`Matéria: ${subject ? subject.nome : 'Desconhecida'}`, margin, y);
+          y += 7;
+          doc.text(`Nota: ${grade.valor}`, margin, y);
+          y += 13;
+        });
+      }
 
       // Rodapé
       const totalPages = doc.getNumberOfPages();
@@ -193,8 +247,7 @@ export default function ObservationsPage() {
         );
       }
 
-      // Salvar o PDF
-      doc.save(`observacoes_${selectedStudent.nome.replace(/\s+/g, '_')}.pdf`);
+      doc.save(`notas_${selectedStudent.nome.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
       setError('Erro ao gerar o relatório em PDF');
@@ -210,6 +263,7 @@ export default function ObservationsPage() {
     return matchesName && matchesTurma && matchesEscola;
   });
 
+  // Gere as turmas apenas dos alunos da escola selecionada (ou todas se nenhuma escola for selecionada)
   const turmas = Array.from(
     new Set(
       students
@@ -222,7 +276,11 @@ export default function ObservationsPage() {
     .filter(Boolean)
     .sort();
 
-  if (loading && !selectedStudent) {
+  useEffect(() => {
+    setSearchTurma('');
+  }, [selectedSchool]);
+
+  if (user === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -232,27 +290,30 @@ export default function ObservationsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-xl font-semibold text-red-500 mb-4">{error}</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Observações</h1>
-        <button
-          onClick={() => router.push('/observacoes/nova')}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        >
-          Nova Observação
-        </button>
+        <h1 className="text-2xl font-bold">Notas</h1>
       </div>
+
+      {/* Select de escola para admin */}
+      {/* {user?.perfil === 'admin' && (
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">Escola</label>
+          <select
+            value={selectedSchool || ''}
+            onChange={(e) => setSelectedSchool(e.target.value ? Number(e.target.value) : null)}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          >
+            <option value="">Selecione uma escola</option>
+            {schools.map((school) => (
+              <option key={school.id} value={school.id}>
+                {school.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      )} */}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Painel de Busca */}
@@ -330,13 +391,13 @@ export default function ObservationsPage() {
           </div>
         </div>
 
-        {/* Lista de Observações */}
+        {/* Lista de Notas */}
         <div className="md:col-span-2">
           {selectedStudent ? (
             <div className="bg-white shadow-md rounded-lg p-4">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold">Observações de {selectedStudent.nome}</h2>
+                  <h2 className="text-lg font-semibold">Notas de {selectedStudent.nome}</h2>
                   <p className="text-sm text-gray-600">
                     Turma: {selectedStudent.turma} | Número: {selectedStudent.numero}
                   </p>
@@ -391,55 +452,73 @@ export default function ObservationsPage() {
                 </button>
               </div>
 
+              {/* Formulário para adicionar nota */}
+              <div className="mb-4 flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1">
+                  <label className="block text-gray-700">Matéria</label>
+                  <select
+                    value={selectedSubject || ''}
+                    onChange={(e) => setSelectedSubject(Number(e.target.value))}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  >
+                    <option value="">Selecione uma matéria</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-gray-700">Nota</label>
+                  <input
+                    type="number"
+                    value={grade}
+                    onChange={(e) => setGrade(Number(e.target.value))}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="Digite a nota"
+                  />
+                </div>
+                <button
+                  onClick={handleAddGrade}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  Adicionar Nota
+                </button>
+              </div>
+
+              {/* Lista de notas */}
               {loading ? (
-                <div className="text-center py-4">Carregando observações...</div>
-              ) : observations.length === 0 ? (
+                <div className="text-center py-4">Carregando notas...</div>
+              ) : grades.length === 0 ? (
                 <div className="text-center py-4 text-gray-500">
-                  Nenhuma observação encontrada para este aluno.
+                  Nenhuma nota encontrada para este aluno.
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {observations.map((observation) => (
-                    <div
-                      key={observation.id}
-                      className={`p-4 rounded-lg border ${
-                        observation.tipo === 'positivo'
-                          ? 'border-green-200 bg-green-50'
-                          : 'border-red-200 bg-red-50'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
+                <div className="space-y-2">
+                  {grades.map((grade, idx) => {
+                    const subject = subjects.find((s) => s.id === grade.materia_id);
+                    return (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-lg border border-gray-200 bg-gray-50 flex justify-between items-center"
+                      >
+                        <span>
                           <span className="font-semibold">
-                            {new Date(observation.data).toLocaleDateString()}
+                            {subject ? subject.nome : 'Matéria desconhecida'}
                           </span>
-                          <span
-                            className={`ml-2 px-2 py-1 rounded text-sm ${
-                              observation.tipo === 'positivo'
-                                ? 'bg-green-200 text-green-800'
-                                : 'bg-red-200 text-red-800'
-                            }`}
-                          >
-                            {observation.tipo === 'positivo' ? 'Positivo' : 'Negativo'}
-                          </span>
-                        </div>
-                        <span className="text-sm text-gray-600">{observation.disciplina}</span>
+                          {': '}
+                          <span className="text-blue-700 font-bold">{grade.valor}</span>
+                        </span>
                       </div>
-                      <p className="text-gray-700 mb-2">{observation.descricao}</p>
-                      {observation.consequencia && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-semibold">Consequência:</span>{' '}
-                          {observation.consequencia}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           ) : (
             <div className="bg-white shadow-md rounded-lg p-4 text-center text-gray-500">
-              Selecione um aluno para ver suas observações
+              Selecione um aluno para ver suas notas
             </div>
           )}
         </div>

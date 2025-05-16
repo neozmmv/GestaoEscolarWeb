@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface DashboardStats {
   totalStudents: number;
@@ -191,6 +192,24 @@ export default function DashboardPage() {
               </button>
 
               <button
+                onClick={() => router.push('/materias')}
+                className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="text-indigo-500 mb-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                </div>
+                <h3 className="font-medium">Matérias</h3>
+                <p className="text-sm text-gray-500">Gerenciar matérias</p>
+              </button>
+
+              <button
                 onClick={() => router.push('/monitores')}
                 className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
               >
@@ -227,8 +246,69 @@ export default function DashboardPage() {
             <h3 className="font-medium">Nova Observação</h3>
             <p className="text-sm text-gray-500">Registrar uma nova observação</p>
           </button>
+
+          {/* Botão Nova Matéria */}
+          <button
+            onClick={() => router.push('/materias/nova')}
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+          >
+            <div className="text-indigo-500 mb-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </div>
+            <h3 className="font-medium">Nova Matéria</h3>
+            <p className="text-sm text-gray-500">Cadastrar uma nova matéria</p>
+          </button>
+
+          {/* Botão Nova Nota */}
+          <button
+            onClick={() => router.push('/notas')}
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+          >
+            <div className="text-blue-500 mb-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </div>
+            <h3 className="font-medium">Nova Nota</h3>
+            <p className="text-sm text-gray-500">Cadastrar uma nova nota</p>
+          </button>
         </div>
       </div>
     </div>
+  );
+}
+
+export function Navbar() {
+  return (
+    <nav className="bg-white shadow px-4 py-2 flex items-center">
+      <Link href="/dashboard" className="mr-4 text-gray-700 hover:text-indigo-600">
+        Dashboard
+      </Link>
+      <Link href="/alunos" className="mr-4 text-gray-700 hover:text-indigo-600">
+        Alunos
+      </Link>
+      <Link href="/observacoes" className="mr-4 text-gray-700 hover:text-indigo-600">
+        Observações
+      </Link>
+      <Link href="/materias" className="mr-4 text-gray-700 hover:text-indigo-600">
+        Matérias
+      </Link>
+      <Link href="/notas" className="mr-4 text-gray-700 hover:text-indigo-600">
+        Notas
+      </Link>
+      {/* Outras abas, se houver */}
+    </nav>
   );
 }

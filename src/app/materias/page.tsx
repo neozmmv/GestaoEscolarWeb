@@ -207,7 +207,7 @@ export default function SubjectsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-xl font-semibold mb-4">Carregando...</div>
+          <div className="text-xl font-semibold mb-4 text-gray-800">Carregando...</div>
         </div>
       </div>
     );
@@ -226,7 +226,7 @@ export default function SubjectsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Matérias</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Matérias</h1>
       </div>
 
       <div className="bg-white shadow-md rounded-lg p-6">
@@ -275,7 +275,7 @@ export default function SubjectsPage() {
 
         {/* Lista de Matérias */}
         <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-4">
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">
             {user?.perfil === 'admin'
               ? selectedSchool
                 ? `Matérias da Escola: ${schools.find((s) => s.id === selectedSchool)?.nome}`
@@ -284,13 +284,16 @@ export default function SubjectsPage() {
           </h2>
 
           {loading ? (
-            <div className="text-center py-4">Carregando matérias...</div>
+            <div className="text-center py-4 text-gray-800">Carregando matérias...</div>
           ) : subjects.length === 0 ? (
             <div className="text-center py-4 text-gray-500">Nenhuma matéria encontrada.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {subjects.map((subject) => (
-                <div key={subject.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div
+                  key={subject.id}
+                  className="text-gray-800 bg-gray-50 p-4 rounded-lg border border-gray-200"
+                >
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-medium">{subject.nome}</h3>

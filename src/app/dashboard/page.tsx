@@ -65,7 +65,7 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-xl font-semibold mb-4">Carregando...</div>
+          <div className="text-xl font-semibold mb-4 text-gray-800">Carregando...</div>
         </div>
       </div>
     );
@@ -83,7 +83,7 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card de Alunos */}
@@ -151,7 +151,7 @@ export default function DashboardPage() {
 
       {/* Ações Rápidas */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Ações Rápidas</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">Ações Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => router.push('/alunos')}
@@ -167,7 +167,7 @@ export default function DashboardPage() {
                 />
               </svg>
             </div>
-            <h3 className="font-medium">Novo Aluno</h3>
+            <h3 className="font-medium text-gray-800">Novo Aluno</h3>
             <p className="text-sm text-gray-500">Cadastrar um novo aluno</p>
           </button>
 
@@ -187,7 +187,7 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="font-medium">Nova Escola</h3>
+                <h3 className="font-medium text-gray-800">Nova Escola</h3>
                 <p className="text-sm text-gray-500">Cadastrar uma nova escola</p>
               </button>
 
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="font-medium">Matérias</h3>
+                <h3 className="font-medium text-gray-800">Matérias</h3>
                 <p className="text-sm text-gray-500">Gerenciar matérias</p>
               </button>
 
@@ -223,7 +223,7 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="font-medium">Novo Monitor</h3>
+                <h3 className="font-medium text-gray-800">Novo Monitor</h3>
                 <p className="text-sm text-gray-500">Cadastrar um novo monitor</p>
               </button>
             </>
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                 />
               </svg>
             </div>
-            <h3 className="font-medium">Nova Observação</h3>
+            <h3 className="font-medium text-gray-800">Nova Observação</h3>
             <p className="text-sm text-gray-500">Registrar uma nova observação</p>
           </button>
 
@@ -262,7 +262,7 @@ export default function DashboardPage() {
                 />
               </svg>
             </div>
-            <h3 className="font-medium">Nova Matéria</h3>
+            <h3 className="font-medium text-gray-800">Nova Matéria</h3>
             <p className="text-sm text-gray-500">Cadastrar uma nova matéria</p>
           </button>
 
@@ -281,7 +281,7 @@ export default function DashboardPage() {
                 />
               </svg>
             </div>
-            <h3 className="font-medium">Nova Nota</h3>
+            <h3 className="font-medium text-gray-800">Nova Nota</h3>
             <p className="text-sm text-gray-500">Cadastrar uma nova nota</p>
           </button>
         </div>

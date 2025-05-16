@@ -346,7 +346,7 @@ export default function NotasPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Notas</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Notas</h1>
       </div>
 
       {/* Select de escola para admin */}
@@ -371,7 +371,7 @@ export default function NotasPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Painel de Busca */}
         <div className="md:col-span-1 bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-4">Buscar Aluno</h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Buscar Aluno</h2>
 
           {/* Filtro de escola para admin */}
           {user?.perfil === 'admin' && (
@@ -424,7 +424,7 @@ export default function NotasPage() {
           </div>
 
           <div className="mt-4">
-            <h3 className="text-sm font-semibold mb-2">Resultados da Busca</h3>
+            <h3 className="text-sm font-semibold mb-2 text-gray-800">Resultados da Busca</h3>
             <div className="max-h-96 overflow-y-auto">
               {filteredStudents.map((student) => (
                 <div
@@ -434,7 +434,7 @@ export default function NotasPage() {
                     selectedStudent?.id === student.id ? 'bg-blue-100' : ''
                   }`}
                 >
-                  <div className="font-medium">{student.nome}</div>
+                  <div className="font-medium text-gray-800">{student.nome}</div>
                   <div className="text-sm text-gray-600">
                     Turma: {student.turma} | Número: {student.numero}
                   </div>
@@ -450,7 +450,9 @@ export default function NotasPage() {
             <div className="bg-white shadow-md rounded-lg p-4">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold">Notas de {selectedStudent.nome}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Notas de {selectedStudent.nome}
+                  </h2>
                   <p className="text-sm text-gray-600">
                     Turma: {selectedStudent.turma} | Número: {selectedStudent.numero}
                   </p>
@@ -564,7 +566,7 @@ export default function NotasPage() {
                         className="p-3 rounded-lg border border-gray-200 bg-gray-50 flex justify-between items-center"
                       >
                         <span>
-                          <span className="font-semibold">
+                          <span className="font-semibold text-gray-800">
                             {subject ? subject.nome : 'Matéria desconhecida'}
                           </span>
                           {': '}

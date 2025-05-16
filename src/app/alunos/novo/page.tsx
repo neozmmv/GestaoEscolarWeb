@@ -117,7 +117,7 @@ export default function NewStudentPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-xl font-semibold mb-4">Carregando...</div>
+          <div className="text-xl font-semibold mb-4 text-gray-800">Carregando...</div>
         </div>
       </div>
     );
@@ -126,7 +126,7 @@ export default function NewStudentPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Novo Aluno</h1>
+        <h1 className="text-2xl font-bold mb-6 text-gray-800">Novo Aluno</h1>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

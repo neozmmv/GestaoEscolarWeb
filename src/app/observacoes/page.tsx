@@ -267,7 +267,7 @@ export default function ObservationsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-xl font-semibold mb-4">Carregando...</div>
+          <div className="text-xl font-semibold mb-4 text-gray-800">Carregando...</div>
         </div>
       </div>
     );
@@ -286,7 +286,7 @@ export default function ObservationsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Observações</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Observações</h1>
         <button
           onClick={() => router.push('/observacoes/nova')}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
@@ -298,7 +298,7 @@ export default function ObservationsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Painel de Busca */}
         <div className="md:col-span-1 bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-4">Buscar Aluno</h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Buscar Aluno</h2>
 
           {/* Filtro de escola para admin */}
           {user?.perfil === 'admin' && (
@@ -351,7 +351,7 @@ export default function ObservationsPage() {
           </div>
 
           <div className="mt-4">
-            <h3 className="text-sm font-semibold mb-2">Resultados da Busca</h3>
+            <h3 className="text-sm font-semibold mb-2 text-gray-800">Resultados da Busca</h3>
             <div className="max-h-96 overflow-y-auto">
               {filteredStudents.map((student) => (
                 <div
@@ -361,7 +361,7 @@ export default function ObservationsPage() {
                     selectedStudent?.id === student.id ? 'bg-blue-100' : ''
                   }`}
                 >
-                  <div className="font-medium">{student.nome}</div>
+                  <div className="font-medium text-gray-800">{student.nome}</div>
                   <div className="text-sm text-gray-600">
                     Turma: {student.turma} | Número: {student.numero}
                   </div>
@@ -377,7 +377,9 @@ export default function ObservationsPage() {
             <div className="bg-white shadow-md rounded-lg p-4">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold">Observações de {selectedStudent.nome}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Observações de {selectedStudent.nome}
+                  </h2>
                   <p className="text-sm text-gray-600">
                     Turma: {selectedStudent.turma} | Número: {selectedStudent.numero}
                   </p>
@@ -433,7 +435,7 @@ export default function ObservationsPage() {
               </div>
 
               {loading ? (
-                <div className="text-center py-4">Carregando observações...</div>
+                <div className="text-center py-4 text-gray-800">Carregando observações...</div>
               ) : observations.length === 0 ? (
                 <div className="text-center py-4 text-gray-500">
                   Nenhuma observação encontrada para este aluno.
@@ -453,7 +455,7 @@ export default function ObservationsPage() {
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <span className="font-semibold">
+                            <span className="font-semibold text-gray-800">
                               {new Date(observation.data).toLocaleDateString()}
                             </span>
                             <span
@@ -471,7 +473,7 @@ export default function ObservationsPage() {
                         <p className="text-gray-700 mb-2">{observation.descricao}</p>
                         {observation.consequencia && (
                           <p className="text-sm text-gray-600">
-                            <span className="font-semibold">Consequência:</span>{' '}
+                            <span className="font-semibold text-gray-800">Consequência:</span>{' '}
                             {observation.consequencia}
                           </p>
                         )}
@@ -492,7 +494,7 @@ export default function ObservationsPage() {
                                   onChange={(e) =>
                                     setEditObservation({ ...editObservation, data: e.target.value })
                                   }
-                                  className="border rounded px-2 py-1 mr-2"
+                                  className="border rounded px-2 py-1 mr-2 "
                                 />
                                 <input
                                   type="text"
@@ -546,16 +548,20 @@ export default function ObservationsPage() {
                               </>
                             ) : (
                               <>
-                                <span className="font-semibold">
+                                <span className="font-semibold text-gray-800">
                                   {new Date(observation.data).toLocaleDateString()}
                                 </span>
-                                <span className="ml-2 text-sm">{observation.disciplina}</span>
-                                <span className="ml-2 text-sm">
+                                <span className="ml-2 text-sm text-gray-800">
+                                  {observation.disciplina}
+                                </span>
+                                <span className="ml-2 text-sm text-gray-800">
                                   {observation.tipo === 'positivo' ? 'Positivo' : 'Negativo'}
                                 </span>
-                                <span className="ml-2 text-sm">{observation.descricao}</span>
+                                <span className="ml-2 text-sm text-gray-800">
+                                  {observation.descricao}
+                                </span>
                                 {observation.consequencia && (
-                                  <span className="ml-2 text-sm">
+                                  <span className="ml-2 text-sm text-gray-800">
                                     Consequência: {observation.consequencia}
                                   </span>
                                 )}

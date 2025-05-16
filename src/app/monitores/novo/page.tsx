@@ -68,12 +68,12 @@ export default function NovoMonitorPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Cadastrar Novo Monitor</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Cadastrar Novo Monitor</h1>
 
       <div className="bg-white rounded-lg shadow p-6">
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Nome</label>
+            <label className="block text-sm font-medium mb-1 text-gray-800">Nome</label>
             <input
               type="text"
               value={formData.nome}
@@ -84,7 +84,7 @@ export default function NovoMonitorPage() {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">CPF</label>
+            <label className="block text-sm font-medium mb-1 text-gray-800">CPF</label>
             <input
               type="text"
               value={formData.cpf}
@@ -95,11 +95,11 @@ export default function NovoMonitorPage() {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Perfil</label>
+            <label className="block text-sm font-medium mb-1 text-gray-800">Perfil</label>
             <select
               value={formData.perfil}
               onChange={(e) => setFormData({ ...formData, perfil: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md text-gray-500"
               required
             >
               <option value="monitor">Monitor</option>
@@ -109,11 +109,11 @@ export default function NovoMonitorPage() {
 
           {formData.perfil !== 'admin' && (
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Escola</label>
+              <label className="block text-sm font-medium mb-1 text-gray-800">Escola</label>
               <select
                 value={formData.escola_id}
                 onChange={(e) => setFormData({ ...formData, escola_id: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border rounded-md text-gray-500"
                 required
               >
                 <option value="">Selecione uma escola</option>
@@ -127,7 +127,7 @@ export default function NovoMonitorPage() {
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Senha</label>
+            <label className="block text-sm font-medium mb-1 text-gray-800">Senha</label>
             <input
               type="password"
               value={formData.senha}

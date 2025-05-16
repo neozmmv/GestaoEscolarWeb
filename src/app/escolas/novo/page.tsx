@@ -33,7 +33,7 @@ export default function NovaEscolaPage() {
 
   return (
     <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Nova Escola</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">Nova Escola</h1>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2">Nome da escola</label>

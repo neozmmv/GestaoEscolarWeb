@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
@@ -32,8 +32,8 @@ async function getUserFromToken() {
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   let connection;
   try {
@@ -45,9 +45,10 @@ export async function DELETE(
     connection = await getConnection();
 
     // Busca a matéria
+    const { id } = await context.params;
     const [materias]: any = await connection.execute(
       'SELECT * FROM materias WHERE id = ?',
-      [params.id]
+      [id]
     );
     if (materias.length === 0) {
       return NextResponse.json(
@@ -84,11 +85,11 @@ export async function DELETE(
 
     // Se houver tabela de vínculo escola-materia, remova vínculos primeiro
     try {
-      await connection.execute('DELETE FROM escolas_materias WHERE materia_id = ?', [params.id]);
+      await connection.execute('DELETE FROM escolas_materias WHERE materia_id = ?', [id]);
     } catch {}
 
     // Exclui a matéria
-    await connection.execute('DELETE FROM materias WHERE id = ?', [params.id]);
+    await connection.execute('DELETE FROM materias WHERE id = ?', [id]);
 
     return NextResponse.json({ message: 'Matéria excluída com sucesso' });
   } catch (error) {

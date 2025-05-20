@@ -126,7 +126,8 @@ export async function POST(request: Request) {
       { expiresIn: '1d' }
     );
 
-    cookies().set('token', token, {
+    const cookieStore = await cookies();
+    cookieStore.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -148,4 +149,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

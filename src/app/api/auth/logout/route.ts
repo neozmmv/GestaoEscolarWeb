@@ -3,7 +3,8 @@ import { cookies } from 'next/headers';
 
 export async function POST() {
   try {
-    cookies().delete('token');
+    const cookieStore = await cookies();
+    cookieStore.delete('token');
     return NextResponse.json({ message: 'Logout realizado com sucesso' });
   } catch (error) {
     console.error('Error during logout:', error);
@@ -12,4 +13,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-} 
+}

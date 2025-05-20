@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
@@ -16,7 +16,8 @@ async function getConnection() {
 }
 
 async function getUserFromToken() {
-  const token = cookies().get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
   if (!token) return null;
 
   try {
@@ -32,8 +33,8 @@ async function getUserFromToken() {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromToken();
@@ -42,12 +43,12 @@ export async function GET(
     }
 
     const connection = await getConnection();
-
+    const { id } = await context.params;
     const [rows]: any = await connection.execute(
       `SELECT m.id, m.nome, m.cpf, m.perfil, m.escola_id 
        FROM monitores m 
        WHERE m.id = ?`,
-      [params.id]
+      [id]
     );
 
     await connection.end();
@@ -70,8 +71,8 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromToken();
@@ -97,11 +98,11 @@ export async function PUT(
     }
 
     const connection = await getConnection();
-
+    const { id } = await context.params;
     // Verificar se o CPF já existe em outro monitor
     const [existingMonitors]: any = await connection.execute(
       'SELECT id FROM monitores WHERE cpf = ? AND id != ?',
-      [cpf, params.id]
+      [cpf, id]
     );
 
     if (existingMonitors.length > 0) {
@@ -126,7 +127,7 @@ export async function PUT(
     }
 
     updateQuery += ' WHERE id = ?';
-    queryParams.push(params.id);
+    queryParams.push(id);
 
     await connection.execute(updateQuery, queryParams);
     await connection.end();
@@ -139,4 +140,45 @@ export async function PUT(
       { status: 500 }
     );
   }
-} 
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getUserFromToken();
+    if (!user || user.perfil !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const connection = await getConnection();
+    const { id } = await context.params;
+
+    // Verificar se o monitor existe
+    const [monitor]: any = await connection.execute(
+      'SELECT id FROM monitores WHERE id = ?',
+      [id]
+    );
+
+    if (monitor.length === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { error: 'Monitor não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Deletar o monitor
+    await connection.execute('DELETE FROM monitores WHERE id = ?', [id]);
+    await connection.end();
+
+    return NextResponse.json({ message: 'Monitor deletado com sucesso' });
+  } catch (error) {
+    console.error('Error deleting monitor:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}

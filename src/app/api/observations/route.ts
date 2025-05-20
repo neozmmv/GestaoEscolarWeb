@@ -15,7 +15,8 @@ async function getConnection() {
 }
 
 async function getUserFromToken() {
-  const token = cookies().get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
   if (!token) return null;
 
   try {
@@ -71,4 +72,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

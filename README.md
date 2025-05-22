@@ -29,8 +29,8 @@ Este é um sistema web de gerenciamento escolar desenvolvido com Next.js, TypeSc
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/school-management-system.git
-cd school-management-system
+git clone https://github.com/neozmmv/GestaoEscolarWeb.git
+cd GestaoEscolarWeb
 ```
 
 2. Instale as dependências:
@@ -48,7 +48,6 @@ DB_USER=seu_usuario
 DB_PASSWORD=sua_senha
 DB_NAME=nome_do_banco
 JWT_SECRET=sua_chave_secreta
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
 ```
 
 4. Execute o projeto em modo de desenvolvimento:
@@ -77,13 +76,6 @@ src/
 - `npm run start` - Inicia o servidor de produção
 - `npm run lint` - Executa o linter
 
-## Contribuição
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Faça commit das suas alterações (`git commit -m 'Adiciona nova feature'`)
-4. Faça push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
 
 ## Licença
 
